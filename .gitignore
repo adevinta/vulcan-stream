@@ -1,0 +1,16 @@
+# Editor marks
+*.swp
+*.swo
+
+# Test binary, build with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# vulcan-stream testing output
+stream_output
+logfile
+
+.DS_Store
+vendor/

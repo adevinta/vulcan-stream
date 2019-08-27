@@ -1,0 +1,49 @@
+#! /bin/bash
+
+set -e
+
+function test_http_stream() {
+    # Wait for vulcan-stream to be connected to DB and service HTTP
+    sleep 3
+
+    # Connect to vulcan-stream stream websocket endpoint and send ouput to file
+    # curl is set with max time connection of 5 seconds
+    curl --include --no-buffer --header "Connection: Upgrade" --header "Upgrade: websocket" \
+        --header "Host: localhost:8080" --header "Origin: http://localhost:8080" \
+        --header "Sec-WebSocket-Key: SGVsbG8sIHdvcmxkIQ==" --header "Sec-WebSocket-Version: 13" \
+        "http://localhost:8080/stream" -m 5 > stream_output 2>&1 &
+    # Just wait for the curl to be connected to the stream
+    sleep 1
+
+    # Send a PostgreSQL notification
+    psql -c "NOTIFY events, '{\"action\":\"test\", \"check_id\":\"00000000-0000-0000-0000-000000000000\"}';" -U postgres stream
+
+    # Wait for curl to write to output file
+    sleep 5
+
+    # Ensure we obtain expected output from stream
+    if grep -q "00000000-0000-0000-0000-000000000000" stream_output; then
+        printf "\033[1;32m[SUCCESS] HTTP INTEGRATION TEST COMPLETED\033[0m\n"
+    else
+        printf "\033[1;31m[FAIL] HTTP INTEGRATION TEST FAILED\033[0m\n"
+        echo -e "Printing 'stream_output' file:\n"
+        cat stream_output
+        exit 1
+    fi
+}
+
+function test_ws_client() {
+    vulcan-stream-test-client "${TRAVIS_BUILD_DIR}"/_resources/config/test.toml
+    if [ $? -eq 0 ]; then
+        printf "\033[1;32m[SUCCESS] WS CLIENT INTEGRATION TEST COMPLETED\033[0m\n"
+    else
+        printf "\033[1;31m[FAIL] WS CLIENT INTEGRATION TEST FAILED\033[0m\n"
+        exit 1
+    fi
+}
+
+# Start vulcan-stream
+vulcan-stream "${TRAVIS_BUILD_DIR}"/_resources/config/test.toml &
+test_http_stream
+test_ws_client
+exit 0

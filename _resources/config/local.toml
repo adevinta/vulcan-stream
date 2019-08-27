@@ -1,0 +1,17 @@
+# VulcanStream local configuration file template
+[Logger]
+LogFile = ""
+LogLevel = "DEBUG"
+
+[Receiver]
+DBName = "stream"
+DBUser = "postgres"
+DBPass = ""
+DBHost = "localhost"
+DBPort = 5432
+DBSSLMode = "disable"
+StreamChannel = "events"
+
+[Sender]
+HTTPPort = 8080
+PingInterval = 5
