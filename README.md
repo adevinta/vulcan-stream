@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/adevinta/vulcan-stream.svg?branch=master)](https://travis-ci.org/adevinta/vulcan-stream)
+
 # Vulcan Stream
 
 Vulcan Stream provides a one-way communication channel from Vulcan Persistence to Vulcan Agents.
