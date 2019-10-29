@@ -13,6 +13,7 @@ const (
 	httpPort     = 8080
 	httpStream   = "test"
 	pingInterval = 1
+	httpBasePath = "/stream"
 	// Receiver
 	dbName        = "stream"
 	dbUser        = "postgres"
@@ -43,6 +44,7 @@ func TestReceiverMainActions(t *testing.T) {
 
 	// Initialize senderConfig
 	sc := SenderConfig{
+		HTTPBasePath: httpBasePath,
 		HTTPPort:     httpPort,
 		HTTPStream:   httpStream,
 		PingInterval: pingInterval,
@@ -67,7 +69,7 @@ func TestReceiverMainActions(t *testing.T) {
 	}
 	go receiver.Start()
 
-	streamEndpoint := fmt.Sprintf("ws://localhost:%v/stream", sc.HTTPPort)
+	streamEndpoint := fmt.Sprintf("ws://localhost:%v%s", sc.HTTPPort, sc.HTTPBasePath)
 	conn, _, err := websocket.DefaultDialer.Dial(streamEndpoint, http.Header{})
 	if err != nil {
 		t.Fatalf("error connecting to stream: %v", err)

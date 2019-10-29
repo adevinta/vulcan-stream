@@ -13,6 +13,7 @@ import (
 type SenderConfig struct {
 	HTTPPort     int
 	HTTPStream   string
+	HTTPBasePath string
 	PingInterval time.Duration
 }
 
@@ -38,7 +39,7 @@ func NewSender(l logrus.FieldLogger, c SenderConfig) *Sender {
 func (s *Sender) Start() {
 	port := fmt.Sprintf(":%v", s.config.HTTPPort)
 	mux := http.NewServeMux()
-	mux.HandleFunc("/stream", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(s.config.HTTPBasePath, func(w http.ResponseWriter, r *http.Request) {
 		if err := s.topic.SubscriberHandler(w, r); err != nil {
 			s.logger.Printf("error handling subscriber request: %+v", err)
 		}

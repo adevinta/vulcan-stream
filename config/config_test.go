@@ -19,6 +19,7 @@ const (
 	// Sender
 	httpPort     = 8080
 	pingInterval = 5
+	httpBasePath = "/stream"
 )
 
 func TestMustReadConfig(t *testing.T) {
@@ -54,6 +55,9 @@ func TestMustReadConfig(t *testing.T) {
 		t.Errorf("Test failed, expected: '%s', got:  '%s'", streamChannel, cfg.Receiver.StreamChannel)
 	}
 	// Sender
+	if cfg.Sender.HTTPBasePath != "/stream" {
+		t.Errorf("Test failed, expected: '%s', got:  '%s'", "/stream", cfg.Sender.HTTPBasePath)
+	}
 	if cfg.Sender.HTTPPort != httpPort {
 		t.Errorf("Test failed, expected: '%d', got:  '%d'", httpPort, cfg.Sender.HTTPPort)
 	}

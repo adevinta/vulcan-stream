@@ -27,5 +27,9 @@ func MustReadConfig(path string) Config {
 		log.Fatalf("Cannot decode configuration file (%v)", err)
 	}
 
+	if config.Sender.HTTPBasePath == "" {
+		config.Sender.HTTPBasePath = "/stream"
+	}
+
 	return config
 }
