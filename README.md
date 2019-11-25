@@ -65,3 +65,24 @@ psql -c "NOTIFY events, '{\"action\":\"test\", \"check_id\":\"00000000-0000-0000
 You can see and modify Vulcan Stream configuration as required:
 
 `_resources/config/local.toml`
+
+
+# Docker execute
+
+Those are the variables you have to setup:
+
+|Variable|Description|Sample|
+|---|---|---|
+|PORT|Listen http port|8080|
+|LOG_LEVEL||DEBUG|
+|PG_(HOST\|DB\|USER\|PWD\|PORT)|Postgresql variables||
+
+```bash
+docker build . -t vs
+
+# Use the default config.toml customized with env variables.
+docker run --env-file ./local.env vs
+
+# Use custom config.toml
+docker run -v `pwd`/custom.toml:/app/config.toml vs
+```

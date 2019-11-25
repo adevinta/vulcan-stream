@@ -14,12 +14,12 @@ RUN go mod download
 COPY . .
 
 RUN go build -o vulcan-stream -a -tags netgo -ldflags '-w' cmd/vulcan-stream/main.go
-# RUN go build -o vulcan-stream-test-client -a -tags netgo -ldflags '-w' cmd/vulcan-stream-test-client/main.go
 
 # final stage
 FROM alpine:3.10
+RUN apk add --no-cache --update gettext
 WORKDIR /app
 COPY --from=builder /app/vulcan-stream /app/
+COPY config.toml .
 COPY run.sh .
-EXPOSE 8080
 CMD ["./run.sh"]

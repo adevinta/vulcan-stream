@@ -1,0 +1,17 @@
+[Logger]
+LogFile = ""
+LogLevel = "$LOG_LEVEL"
+
+[Receiver]
+DBName = "$PG_DB"
+DBUser = "$PG_USER"
+DBPass = "$PG_PASSWORD"
+DBHost = "$PG_HOST"
+DBPort = $PG_PORT
+DBSSLMode = "disable"
+StreamChannel = "events"
+
+[Sender]
+HTTPPort = $PORT
+HTTPStream = "stream"
+PingInterval = 10
