@@ -76,6 +76,7 @@ Those are the variables you have to setup:
 |PORT|Listen http port|8080|
 |LOG_LEVEL||DEBUG|
 |PG_(HOST\|DB\|USER\|PWD\|PORT)|Postgresql variables||
+|STREAM||stream|
 
 ```bash
 docker build . -t vs
