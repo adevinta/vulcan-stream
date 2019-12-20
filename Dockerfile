@@ -18,6 +18,13 @@ RUN go build -o vulcan-stream -a -tags netgo -ldflags '-w' cmd/vulcan-stream/mai
 # final stage
 FROM alpine:3.10
 RUN apk add --no-cache --update gettext
+
+ARG BUILD_RFC3339="1970-01-01T00:00:00Z"
+ARG COMMIT="local"
+
+ENV BUILD_RFC3339 "$BUILD_RFC3339"
+ENV COMMIT "$COMMIT"
+
 WORKDIR /app
 COPY --from=builder /app/vulcan-stream /app/
 COPY config.toml .
