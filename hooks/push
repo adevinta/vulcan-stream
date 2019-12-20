@@ -1,0 +1,29 @@
+#!/bin/bash
+# hooks/post_push
+# https://docs.docker.com/docker-cloud/builds/advanced/
+# https://semver.org/
+
+function add_tag() {
+    echo "[***] Adding tag ${1}"
+    docker tag $IMAGE_NAME $DOCKER_REPO:$1
+    docker push $DOCKER_REPO:$1
+}
+
+# Add always a tag with the commit id.
+add_tag `git rev-parse --short HEAD`
+
+if BRANCH=$(git symbolic-ref --short -q HEAD)
+then
+    if [[ "${BRANCH}" == "master" ]] ; then
+        BRANCH=latest
+    fi
+    add_tag $BRANCH
+fi
+
+if TAG=$(git describe --tags --match "v*" --exact-match)
+then
+  TAG="${TAG:1}"  # remove leading 'v'
+  add_tag $TAG
+fi
+
+exit $?
