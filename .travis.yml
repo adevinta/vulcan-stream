@@ -15,3 +15,4 @@ go_import_path: github.com/adevinta/vulcan-stream
 script:
   - go test -v $(go list ./... | grep -v /vendor/)
   - _script/test
+  - ./_script/build.sh $TRAVIS_COMMIT $TRAVIS_BRANCH $TRAVIS_TAG
