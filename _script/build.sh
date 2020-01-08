@@ -2,7 +2,7 @@
 
 IMAGE_NAME=vulcan-stream
 DOCKER_REPO=adevinta/vulcan-stream
-COMMIT=${TRAVIS_COMMIT:0:7}
+COMMIT=${TRAVIS_COMMIT:0:7}     # Keep only the 7 leading chars of the commit
 
 docker build \
     --build-arg BUILD_RFC3339=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
@@ -32,5 +32,9 @@ fi
 
 echo "TAG: $TRAVIS_TAG"
 if [ ! -z $TRAVIS_TAG ]; then
-  add_tag $TAG
+    TAG=$TRAVIS_TAG
+    if [ "$TAG" =~ "v[0-9]+.*" ]; then
+        TAG=${TAG:1}   # Remove the leading "v" from the git tag (ex v1.2 -> 1.3)
+    fi
+    add_tag $TAG
 fi
