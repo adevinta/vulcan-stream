@@ -2,10 +2,11 @@
 
 IMAGE_NAME=vulcan-stream
 DOCKER_REPO=adevinta/vulcan-stream
+COMMIT=${TRAVIS_COMMIT:0:7}
 
 docker build \
     --build-arg BUILD_RFC3339=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
-    --build-arg COMMIT=$1 \
+    --build-arg COMMIT=$COMMIT \
     -t $IMAGE_NAME .
 
 function add_tag() {
@@ -17,20 +18,19 @@ function add_tag() {
 echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
 
 # Add always a tag with the commit id.
-add_tag $1
+add_tag $COMMIT
 
-echo "BRANCH: $2"
-if [[ -z "$2" ]];
-then
-    if [[ "$2" == "master" ]] ; then
+echo "BRANCH: $TRAVIS_BRANCH"
+if [ ! -z $TRAVIS_BRANCH ]; then
+    if [[ "${TRAVIS_BRANCH}" == "master" ]] ; then
         BRANCH=latest
+    else
+        BRANCH=$TRAVIS_BRANCH
     fi
-    add_tag $2
+    add_tag $TRAVIS_BRANCH
 fi
 
-echo "TAG: $3"
-if [[ -z "$3" ]];
-then
-  TAG="${3:1}"  # remove leading 'v'
+echo "TAG: $TRAVIS_TAG"
+if [ ! -z $TRAVIS_TAG ]; then
   add_tag $TAG
 fi
