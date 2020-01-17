@@ -76,6 +76,8 @@ Those are the variables you have to setup:
 |PORT|Listen http port|8080|
 |LOG_LEVEL||DEBUG|
 |PG_(HOST\|DB\|USER\|PWD\|PORT)|Postgresql variables||
+|PG_SSLMODE|One of these (disable,allow,prefer,require,verify-ca,verify-full)|disable|
+|PG_CA_B64|A base64 encoded ca certificate||
 |STREAM||stream|
 
 ```bash
