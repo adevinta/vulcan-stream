@@ -16,3 +16,12 @@ script:
   - go test -v $(go list ./... | grep -v /vendor/)
   - _script/test
   - ./_script/build.sh
+  - |
+      wget https://raw.githubusercontent.com/adevinta/Publish-Docker-Github-Action/master/entrypoint.sh -O docker.sh
+      chmod +x docker.sh
+      export INPUT_USERNAME=$DOCKER_USERNAME
+      export INPUT_PASSWORD=$DOCKER_PASSWORD
+      export INPUT_NAME=$TRAVIS_REPO_SLUG
+deploy:
+  - provider: script
+    script: ./docker.sh
