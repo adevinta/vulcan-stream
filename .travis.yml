@@ -21,9 +21,4 @@ script:
       export INPUT_USERNAME=$DOCKER_USERNAME
       export INPUT_PASSWORD=$DOCKER_PASSWORD
       export INPUT_NAME=$TRAVIS_REPO_SLUG
-deploy:
-  provider: script
-  script: ./docker.sh
-  on:
-    tags: true
-    all_branches: true
+after_script: ./docker.sh
