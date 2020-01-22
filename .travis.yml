@@ -15,7 +15,6 @@ go_import_path: github.com/adevinta/vulcan-stream
 script:
   - go test -v $(go list ./... | grep -v /vendor/)
   - _script/test
-  - ./_script/build.sh
   - |
       wget https://raw.githubusercontent.com/adevinta/Publish-Docker-Github-Action/master/entrypoint.sh -O docker.sh
       chmod +x docker.sh
@@ -23,5 +22,8 @@ script:
       export INPUT_PASSWORD=$DOCKER_PASSWORD
       export INPUT_NAME=$TRAVIS_REPO_SLUG
 deploy:
-  - provider: script
-    script: ./docker.sh
+  provider: script
+  script: ./docker.sh
+  on:
+    tags: true
+    all_branches: true
