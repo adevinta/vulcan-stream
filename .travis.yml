@@ -15,4 +15,4 @@ go_import_path: github.com/adevinta/vulcan-stream
 script:
   - go test -v $(go list ./... | grep -v /vendor/)
   - _script/test
-  - bash -c 'source <(curl -s https://raw.githubusercontent.com/adevinta/Publish-Docker-Github-Action/travis/entrypoint.sh)' 
+  - bash -c 'source <(curl -s https://raw.githubusercontent.com/adevinta/Publish-Docker-Github-Action/travis/entrypoint.sh)'
