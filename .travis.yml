@@ -16,9 +16,4 @@ script:
   - go test -v $(go list ./... | grep -v /vendor/)
   - _script/test
   - |
-      export INPUT_USERNAME=$DOCKER_USERNAME
-      export INPUT_PASSWORD=$DOCKER_PASSWORD
-      export INPUT_NAME=$TRAVIS_REPO_SLUG
-      export GITHUB_SHA=$TRAVIS_COMMIT
-      export GITHUB_REF=$TRAVIS_BRANCH
-      bash -c 'source <(curl -s https://raw.githubusercontent.com/adevinta/Publish-Docker-Github-Action/master/entrypoint.sh)'
+      bash -c 'source <(curl -s https://raw.githubusercontent.com/adevinta/Publish-Docker-Github-Action/travis/entrypoint.sh)'
