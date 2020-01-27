@@ -8,7 +8,7 @@ DBUser = "$PG_USER"
 DBPass = "$PG_PASSWORD"
 DBHost = "$PG_HOST"
 DBPort = $PG_PORT
-DBSSLMode = "disable"
+DBSSLMode = "$PG_SSLMODE"
 StreamChannel = "events"
 
 [Sender]
