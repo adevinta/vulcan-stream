@@ -1,11 +1,10 @@
 dist: trusty
 language: go
 go:
-  - 1.12.7
+  - 1.13.3
 env:
   global:
     - CGO_ENABLED=0
-    - GO111MODULE=on
 services:
   - postgresql
 before_script:
