@@ -1,11 +1,10 @@
 dist: trusty
 language: go
 go:
-  - 1.12.7
+  - 1.13.3
 env:
   global:
     - CGO_ENABLED=0
-    - GO111MODULE=on
 services:
   - postgresql
 before_script:
@@ -15,3 +14,5 @@ go_import_path: github.com/adevinta/vulcan-stream
 script:
   - go test -v $(go list ./... | grep -v /vendor/)
   - _script/test
+after_success:
+  - bash -c 'source <(curl -s https://raw.githubusercontent.com/adevinta/vulcan-cicd/master/docker.sh)'

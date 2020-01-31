@@ -2,8 +2,7 @@ FROM golang:1.13-alpine3.10 as builder
 
 WORKDIR /app
 
-ENV GO111MODULE=on \
-    CGO_ENABLED=0 \
+ENV CGO_ENABLED=0 \
     GOOS=linux \
     GOARCH=amd64
 
