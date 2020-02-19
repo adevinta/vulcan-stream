@@ -9,4 +9,4 @@ update_configs:
       - match:
           dependency_name: "*adevinta*"
       - match:
-          dependency_name: "*danfaizer*"
+          dependency_name: "*gowse*"
