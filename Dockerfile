@@ -27,5 +27,6 @@ ENV COMMIT "$COMMIT"
 WORKDIR /app
 COPY --from=builder /app/vulcan-stream /app/
 COPY config.toml .
+COPY wait-for.sh .
 COPY run.sh .
 CMD ["./run.sh"]
