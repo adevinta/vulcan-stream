@@ -7,7 +7,6 @@ import (
 	metrics "github.com/adevinta/vulcan-metrics-client"
 	stream "github.com/adevinta/vulcan-stream"
 	"github.com/adevinta/vulcan-stream/config"
-	"github.com/armon/go-metrics"
 )
 
 func main() {
