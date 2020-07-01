@@ -102,7 +102,7 @@ func (r *Receiver) Start() {
 			if err := json.Unmarshal([]byte(n.Extra), &msg); err != nil {
 				r.logger.WithError(err).Error("Notification unmarshall error")
 			} else {
-				r.incrBroadcastedMssgs()
+				r.incrBroadcastedMssgs(msg)
 				r.sender.Broadcast(msg)
 			}
 		case <-time.After(90 * time.Second):
@@ -118,19 +118,24 @@ func (r *Receiver) Start() {
 
 // incrNotifiedMssgs increments the metric for notified mssgs.
 func (r *Receiver) incrNotifiedMssgs() {
-	r.pushMetrics(notifiedMetric)
+	r.pushMetrics(notifiedMetric, []string{componentTag})
 }
 
-// incrBroadcastedMssgs increments the metric for broadcasted mssgs.
-func (r *Receiver) incrBroadcastedMssgs() {
-	r.pushMetrics(broadcastedMetric)
+// incrBroadcastedMssgs increments the metric for broadcasted mssgs
+// including a tag for the requested action.
+func (r *Receiver) incrBroadcastedMssgs(msg Message) {
+	tags := []string{
+		componentTag,
+		fmt.Sprint("action:", msg.Action),
+	}
+	r.pushMetrics(broadcastedMetric, tags)
 }
 
-func (r *Receiver) pushMetrics(metric string) {
+func (r *Receiver) pushMetrics(metric string, tags []string) {
 	r.metricsClient.Push(metrics.Metric{
 		Name:  metric,
 		Typ:   metrics.Count,
 		Value: 1,
-		Tags:  []string{componentTag},
+		Tags:  tags,
 	})
 }
