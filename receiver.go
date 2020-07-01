@@ -7,8 +7,17 @@ import (
 	"fmt"
 	"time"
 
+	metrics "github.com/adevinta/vulcan-metrics-client"
 	"github.com/lib/pq"
 	"github.com/sirupsen/logrus"
+)
+
+const (
+	// Metrics
+	notifiedMetric    = "vulcan.stream.mssgs.notified"
+	broadcastedMetric = "vulcan.stream.mssgs.broadcasted"
+
+	componentTag = "component:stream"
 )
 
 // ReceiverConfig defines required Vulcan Stream configuration
@@ -30,15 +39,17 @@ type Receiver struct {
 	logger             logrus.FieldLogger
 	config             ReceiverConfig
 	listener           *pq.Listener
+	metricsClient      metrics.Client
 }
 
 // NewReceiver creates a Vulcan Stream receiver instance,
 // initializing PostgreSQL listen instance with provided configuration.
-func NewReceiver(l logrus.FieldLogger, c ReceiverConfig, s *Sender) (*Receiver, error) {
+func NewReceiver(l logrus.FieldLogger, c ReceiverConfig, s *Sender, mc metrics.Client) (*Receiver, error) {
 	receiver := Receiver{
-		sender: s,
-		logger: l,
-		config: c,
+		sender:        s,
+		logger:        l,
+		config:        c,
+		metricsClient: mc,
 	}
 
 	connectionString := fmt.Sprintf(
@@ -84,10 +95,14 @@ func (r *Receiver) Start() {
 			r.logger.WithFields(logrus.Fields{
 				"message": string([]byte(n.Extra)),
 			}).Info("Message notification received")
+
+			r.incrNotifiedMssgs()
+
 			msg := Message{}
 			if err := json.Unmarshal([]byte(n.Extra), &msg); err != nil {
 				r.logger.WithError(err).Error("Notification unmarshall error")
 			} else {
+				r.incrBroadcastedMssgs()
 				r.sender.Broadcast(msg)
 			}
 		case <-time.After(90 * time.Second):
@@ -99,4 +114,23 @@ func (r *Receiver) Start() {
 			}()
 		}
 	}
+}
+
+// incrNotifiedMssgs increments the metric for notified mssgs.
+func (r *Receiver) incrNotifiedMssgs() {
+	r.pushMetrics(notifiedMetric)
+}
+
+// incrBroadcastedMssgs increments the metric for broadcasted mssgs.
+func (r *Receiver) incrBroadcastedMssgs() {
+	r.pushMetrics(broadcastedMetric)
+}
+
+func (r *Receiver) pushMetrics(metric string) {
+	r.metricsClient.Push(metrics.Metric{
+		Name:  metric,
+		Typ:   metrics.Count,
+		Value: 1,
+		Tags:  []string{componentTag},
+	})
 }
