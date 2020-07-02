@@ -110,6 +110,8 @@ func (r *Receiver) Start() {
 				err := r.listener.Ping()
 				if err != nil {
 					r.logger.WithError(err).Error("Listener ping error")
+				} else {
+					r.incrBroadcastedMssgs(Message{Action: "ping"})
 				}
 			}()
 		}
