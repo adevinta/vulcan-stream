@@ -15,3 +15,6 @@ StreamChannel = "events"
 HTTPPort = $PORT
 HTTPStream = "stream"
 PingInterval = 10
+
+[Metrics]
+enabled = $DOGSTATSD_ENABLED

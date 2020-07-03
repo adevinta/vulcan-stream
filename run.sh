@@ -3,6 +3,7 @@
 export PORT=${PORT:-8080}
 export LOG_LEVEL=${LOG_LEVEL:-Debug}
 export PG_PORT=${PG_PORT:-5432}
+export DOGSTATSD_ENABLED=${DOGSTATSD_ENABLED:-false}
 
 # Apply env variables
 cat config.toml | envsubst > run.toml

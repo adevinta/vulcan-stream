@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"testing"
 
+	metrics "github.com/adevinta/vulcan-metrics-client"
 	"github.com/gorilla/websocket"
 )
 
@@ -26,6 +27,10 @@ const (
 	receiverLogLevel = "debug"
 )
 
+type mockMetricsClient struct {
+	metrics.Client
+}
+
 func TestReceiverMainActions(t *testing.T) {
 	// Initialize loggerConfig
 	lc := LoggerConfig{
@@ -40,6 +45,8 @@ func TestReceiverMainActions(t *testing.T) {
 	defer func() {
 		_ = logFile.Close()
 	}()
+
+	mc := &mockMetricsClient{}
 
 	// Initialize senderConfig
 	sc := SenderConfig{
@@ -61,7 +68,7 @@ func TestReceiverMainActions(t *testing.T) {
 
 	sender := NewSender(logger, sc)
 	go sender.Start()
-	receiver, err := NewReceiver(logger, rc, sender)
+	receiver, err := NewReceiver(logger, rc, sender, mc)
 	if err != nil {
 		t.Fatalf("error creating the receiver: %v", err)
 	}
