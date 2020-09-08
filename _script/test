@@ -42,6 +42,8 @@ function test_ws_client() {
     fi
 }
 
+go test -v -short -cover ./...
+
 # Start vulcan-stream
 vulcan-stream "${TRAVIS_BUILD_DIR}"/_resources/config/test.toml &
 test_http_stream
