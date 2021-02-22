@@ -27,10 +27,20 @@ type Storage interface {
 // the storage aborted checks.
 type cache []string
 
+// RedisConfig specifies the required
+// config for RedisStorage.
+type RedisConfig struct {
+	Addr string
+	Usr  string
+	Pwd  string
+	DB   int
+	TTL  int
+}
+
 // RedisStorage is the Redis implementation
 // for the stream Storage.
 type RedisStorage struct {
-	*sync.RWMutex
+	sync.RWMutex
 	rdb *redis.Client
 	// Because a current condition for stream is that
 	// it runs as a single instance, we can mantain a local
@@ -40,21 +50,22 @@ type RedisStorage struct {
 }
 
 // NewRedisStorage builds a new RedisStorage.
-func NewRedisStorage(addr, pwd string, db, ttl int) (*RedisStorage, error) {
+func NewRedisStorage(c RedisConfig) (*RedisStorage, error) {
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     addr,
-		Password: pwd,
-		DB:       db,
+		Addr:     c.Addr,
+		Username: c.Usr,
+		Password: c.Pwd,
+		DB:       c.DB,
 	})
 
-	if ttl == 0 {
-		ttl = defTTL
+	if c.TTL == 0 {
+		c.TTL = defTTL
 	}
 
 	storage := &RedisStorage{
 		rdb:   rdb,
 		cache: cache{},
-		ttl:   time.Duration(ttl) * time.Hour,
+		ttl:   time.Duration(c.TTL) * time.Hour,
 	}
 
 	var err error
@@ -75,7 +86,7 @@ func (r *RedisStorage) GetAbortedChecks(ctx context.Context) ([]string, error) {
 
 	// Because we have mantained local cache in sync
 	// with remote storage, we can return local copy
-	// directly instead of performing a request to redis.
+	// directly instead of performing requests to redis.
 	return r.cache, nil
 }
 
@@ -116,7 +127,7 @@ func (r *RedisStorage) getRemoteChecks(ctx context.Context) ([]string, error) {
 		checks []string
 	)
 
-	match := fmt.Sprint(checksKeyPrefix, '*')
+	match := fmt.Sprint(checksKeyPrefix, "*")
 	for {
 		var keys []string
 		keys, cursor, err = r.rdb.Scan(ctx, cursor, match, defScanChunk).Result()
@@ -144,7 +155,7 @@ func (r *RedisStorage) getRemoteChecks(ctx context.Context) ([]string, error) {
 func (r *RedisStorage) refresh() {
 	ctx := context.Background()
 	for {
-		time.Sleep(rfshPeriod)
+		time.Sleep(time.Duration(rfshPeriod) * time.Hour)
 		r.Lock()
 		r.cache, _ = r.getRemoteChecks(ctx)
 		r.Unlock()

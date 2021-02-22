@@ -1,7 +1,6 @@
 package stream
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -11,7 +10,6 @@ import (
 
 // SenderConfig defines required Vulcan websocket event server configuration
 type SenderConfig struct {
-	HTTPPort     int
 	HTTPStream   string
 	PingInterval time.Duration
 }
@@ -23,10 +21,6 @@ type Sender struct {
 	config SenderConfig
 }
 
-// statusHandler simply returns 200 OK responses
-func statusHandler(w http.ResponseWriter, r *http.Request) {
-}
-
 // NewSender creates a Vulcan Stream sender instance
 func NewSender(l logrus.FieldLogger, c SenderConfig) *Sender {
 	server := gowse.NewServer(l.WithFields(logrus.Fields{}))
@@ -36,19 +30,15 @@ func NewSender(l logrus.FieldLogger, c SenderConfig) *Sender {
 
 // Start initializes a websocket event server instance with provided configuration
 func (s *Sender) Start() {
-	port := fmt.Sprintf(":%v", s.config.HTTPPort)
-	mux := http.NewServeMux()
-	mux.HandleFunc("/stream", func(w http.ResponseWriter, r *http.Request) {
-		if err := s.topic.SubscriberHandler(w, r); err != nil {
-			s.logger.Printf("error handling subscriber request: %+v", err)
-		}
-	})
-	mux.HandleFunc("/status", statusHandler)
 	go s.ping()
-	s.logger.WithFields(logrus.Fields{
-		"details": port,
-	}).Info("Vulcan Stream Sender started")
-	s.logger.Panic(http.ListenAndServe(port, mux))
+	s.logger.Info("Vulcan Stream Sender started")
+}
+
+// HandleConn handles a connection to sender web socket topic.
+func (s *Sender) HandleConn(w http.ResponseWriter, r *http.Request) {
+	if err := s.topic.SubscriberHandler(w, r); err != nil {
+		s.logger.Error("error handling subscriber request: %+v", err)
+	}
 }
 
 // Broadcast emits msg to the specified Stream channel
