@@ -6,7 +6,8 @@ LogLevel = "$LOG_LEVEL"
 Port = $PORT
 
 [Storage]
-Addr = "$REDIS_ADDR"
+Host = "$REDIS_HOST"
+Port = $REDIS_PORT
 Usr = "$REDIS_USR"
 Pwd = "$REDIS_PWD"
 DB = $REDIS_DB

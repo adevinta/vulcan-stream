@@ -30,7 +30,8 @@ type cache []string
 // RedisConfig specifies the required
 // config for RedisStorage.
 type RedisConfig struct {
-	Addr string
+	Host string
+	Port int
 	Usr  string
 	Pwd  string
 	DB   int
@@ -52,7 +53,7 @@ type RedisStorage struct {
 // NewRedisStorage builds a new RedisStorage.
 func NewRedisStorage(c RedisConfig) (*RedisStorage, error) {
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     c.Addr,
+		Addr:     fmt.Sprint(c.Host, ":", c.Port),
 		Username: c.Usr,
 		Password: c.Pwd,
 		DB:       c.DB,
