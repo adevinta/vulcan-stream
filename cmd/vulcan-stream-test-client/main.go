@@ -2,7 +2,6 @@ package main
 
 import (
 	"crypto/rand"
-	"database/sql"
 	"fmt"
 	"io"
 	"log"
@@ -47,7 +46,7 @@ func timeout(l *log.Logger, ch chan bool) {
 func wsClient(l *log.Logger, c *config.Config, t string, ch chan bool) {
 	l.Print("Building vulcan-stream URL Endpoint string")
 	streamEndpoint := fmt.Sprintf("ws://localhost:%v/stream",
-		c.Sender.HTTPPort)
+		c.API.Port)
 
 	l.Printf("Client connecting to vulcan-stream URL: %v", streamEndpoint)
 	conn, _, err := websocket.DefaultDialer.Dial(streamEndpoint, http.Header{})
@@ -91,30 +90,35 @@ func wsClient(l *log.Logger, c *config.Config, t string, ch chan bool) {
 // - Config
 // - Token string (the key which will generate an event that can be identified)
 func notifyEvent(l *log.Logger, c *config.Config, t string) {
-	l.Print("Waiting for stream to be ready")
-	time.Sleep(3000 * time.Millisecond)
-	l.Print("Creating database connection string")
-	connectionString := fmt.Sprintf(
-		"dbname='%v' user='%v' password='%v' host=%v port=%v sslmode=%v",
-		c.Receiver.DBName, c.Receiver.DBUser, c.Receiver.DBPass, c.Receiver.DBHost, c.Receiver.DBPort, c.Receiver.DBSSLMode)
-	l.Print("Creating database connection")
-	dbConnection, err := sql.Open("postgres", connectionString)
-	if err != nil {
-		l.Fatal("Failed connecting to the database")
-	}
-	l.Print("Database connection created")
-	l.Print("Creating event message")
-	notification := fmt.Sprintf("NOTIFY %v, '{\"action\":\"test\",\"check_id\":\"%v\"}'", c.Receiver.StreamChannel, t)
-	l.Printf("Event message created: %v", notification)
-	l.Print("Notifying message to the database")
-	_, err = dbConnection.Exec(notification)
-	if err != nil {
-		l.Printf("Error notifying the database: %v", err)
-	}
-	l.Print("Message notified to the database")
+	// TODO:
+	// l.Print("Waiting for stream to be ready")
+	// time.Sleep(3000 * time.Millisecond)
+	// l.Print("Creating database connection string")
+	// connectionString := fmt.Sprintf(
+	// 	"dbname='%v' user='%v' password='%v' host=%v port=%v sslmode=%v",
+	// 	c.Receiver.DBName, c.Receiver.DBUser, c.Receiver.DBPass, c.Receiver.DBHost, c.Receiver.DBPort, c.Receiver.DBSSLMode)
+	// l.Print("Creating database connection")
+	// dbConnection, err := sql.Open("postgres", connectionString)
+	// if err != nil {
+	// 	l.Fatal("Failed connecting to the database")
+	// }
+	// l.Print("Database connection created")
+	// l.Print("Creating event message")
+	// notification := fmt.Sprintf("NOTIFY %v, '{\"action\":\"test\",\"check_id\":\"%v\"}'", c.Receiver.StreamChannel, t)
+	// l.Printf("Event message created: %v", notification)
+	// l.Print("Notifying message to the database")
+	// _, err = dbConnection.Exec(notification)
+	// if err != nil {
+	// 	l.Printf("Error notifying the database: %v", err)
+	// }
+	// l.Print("Message notified to the database")
 }
 
 func main() {
+	os.Exit(0)
+
+	// TODO: Update test to v2
+
 	logger := log.New(os.Stderr, "vulcan-stream-test-client: ", log.LstdFlags|log.Lshortfile)
 	logger.Print("Starting vulcan-stream-test-client")
 	// Read config file
