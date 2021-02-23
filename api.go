@@ -138,7 +138,7 @@ func (a *API) statusHandler(w http.ResponseWriter, r *http.Request) { /* 200 OK 
 
 func writeErr(w http.ResponseWriter, err error) {
 	w.WriteHeader(http.StatusInternalServerError)
-	w.Write([]byte(fmt.Sprintf("Err: %v", err)))
+	w.Write([]byte(fmt.Sprintf("err: %v", err)))
 }
 
 func (a *API) incrNotifiedMssgs(count int) {
