@@ -14,4 +14,5 @@ if [ ! -z "$PG_CA_B64" ]; then
   echo $PG_CA_B64 | base64 -d > /etc/ssl/certs/pg.crt  # for go app
 fi
 
+sleep 999999
 /app/vulcan-stream run.toml
