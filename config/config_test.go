@@ -8,8 +8,13 @@ const (
 	// Logger
 	logFile  = ""
 	logLevel = "DEBUG"
+	// API
+	httpPort = 8080
+	// Storage
+	storageHost = "127.0.0.1"
+	storagePort = 6379
 	// Sender
-	// httpPort     = 8080
+	httpStream   = "stream"
 	pingInterval = 5
 )
 
@@ -23,13 +28,21 @@ func TestMustReadConfig(t *testing.T) {
 	if cfg.Logger.LogLevel != logLevel {
 		t.Errorf("Test failed, expected: '%s', got:  '%s'", logLevel, cfg.Logger.LogLevel)
 	}
-
-	// TODO:
-
+	// API
+	if cfg.API.Port != httpPort {
+		t.Errorf("Test failed, expected: '%d', got:  '%d'", httpPort, cfg.API.Port)
+	}
+	// Storage
+	if cfg.Storage.Host != storageHost {
+		t.Errorf("Test failed, expected: '%s', got:  '%s'", storageHost, cfg.Storage.Host)
+	}
+	if cfg.Storage.Port != storagePort {
+		t.Errorf("Test failed, expected: '%d', got:  '%d'", storagePort, cfg.Storage.Port)
+	}
 	// Sender
-	// if cfg.Sender.HTTPPort != httpPort {
-	// 	t.Errorf("Test failed, expected: '%d', got:  '%d'", httpPort, cfg.Sender.HTTPPort)
-	// }
+	if cfg.Sender.HTTPStream != httpStream {
+		t.Errorf("Test failed, expected: '%s', got:  '%s'", httpStream, cfg.Sender.HTTPStream)
+	}
 	if cfg.Sender.PingInterval != pingInterval {
 		t.Errorf("Test failed, expected: '%d', got:  '%d'", pingInterval, cfg.Sender.PingInterval)
 	}
