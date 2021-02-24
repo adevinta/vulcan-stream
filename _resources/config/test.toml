@@ -15,4 +15,5 @@ DB = 0
 TTL = 0
 
 [Sender]
+HTTPStream = "stream"
 PingInterval = 5

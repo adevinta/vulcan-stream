@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/rand"
 	"fmt"
 	"io"
@@ -84,43 +85,31 @@ func wsClient(l *log.Logger, c *config.Config, t string, ch chan bool) {
 	}
 }
 
-// notifyEvent generates a PostgreSQL notification
+// abortCheck performs an HTTP request to stream's abort endpoint
+// in order to abort a check which matches the input token.
 // Requires:
 // - Logger
 // - Config
-// - Token string (the key which will generate an event that can be identified)
-func notifyEvent(l *log.Logger, c *config.Config, t string) {
-	// TODO:
-	// l.Print("Waiting for stream to be ready")
-	// time.Sleep(3000 * time.Millisecond)
-	// l.Print("Creating database connection string")
-	// connectionString := fmt.Sprintf(
-	// 	"dbname='%v' user='%v' password='%v' host=%v port=%v sslmode=%v",
-	// 	c.Receiver.DBName, c.Receiver.DBUser, c.Receiver.DBPass, c.Receiver.DBHost, c.Receiver.DBPort, c.Receiver.DBSSLMode)
-	// l.Print("Creating database connection")
-	// dbConnection, err := sql.Open("postgres", connectionString)
-	// if err != nil {
-	// 	l.Fatal("Failed connecting to the database")
-	// }
-	// l.Print("Database connection created")
-	// l.Print("Creating event message")
-	// notification := fmt.Sprintf("NOTIFY %v, '{\"action\":\"test\",\"check_id\":\"%v\"}'", c.Receiver.StreamChannel, t)
-	// l.Printf("Event message created: %v", notification)
-	// l.Print("Notifying message to the database")
-	// _, err = dbConnection.Exec(notification)
-	// if err != nil {
-	// 	l.Printf("Error notifying the database: %v", err)
-	// }
-	// l.Print("Message notified to the database")
+// - Token string (the key which will be specified as check ID that can be identified)
+func abortCheck(l *log.Logger, c *config.Config, t string) {
+	l.Print("Waiting for stream to be ready")
+	time.Sleep(3000 * time.Millisecond)
+
+	l.Print("Posting message to stream API")
+	abortEndpoint := fmt.Sprintf("http://localhost:%d/abort", c.API.Port)
+	abortPayload := bytes.NewBuffer([]byte(fmt.Sprintf(`{"checks": ["%v"]}`, t)))
+	_, err := http.Post(abortEndpoint, "application/json", abortPayload)
+	if err != nil {
+		l.Printf("Error posting message to stream API: %v", err)
+	}
+
+	l.Print("Abort request successflly sent to stream API")
 }
 
 func main() {
-	os.Exit(0)
-
-	// TODO: Update test to v2
-
 	logger := log.New(os.Stderr, "vulcan-stream-test-client: ", log.LstdFlags|log.Lshortfile)
 	logger.Print("Starting vulcan-stream-test-client")
+
 	// Read config file
 	if len(os.Args) != 2 {
 		log.Fatal("Usage: vulcan-stream-test-client config-file")
@@ -131,12 +120,13 @@ func main() {
 	config := config.MustReadConfig(configFile)
 	logger.Print("Config file read successfully")
 
+	// Test
 	ch := make(chan bool)
 	token := uuid()
 	logger.Printf("Magic token to test message streaming: %v", token)
-	logger.Print("Starting ServerSideEvents client")
+	logger.Print("Starting stream WS client")
 	go wsClient(logger, &config, token, ch)
-	go notifyEvent(logger, &config, token)
+	go abortCheck(logger, &config, token)
 	go timeout(logger, ch)
 
 	if <-ch {

@@ -15,8 +15,8 @@ function test_http_stream() {
     # Just wait for the curl to be connected to the stream
     sleep 1
 
-    # Send a PostgreSQL notification
-    psql -c "NOTIFY events, '{\"action\":\"test\", \"check_id\":\"00000000-0000-0000-0000-000000000000\"}';" -U postgres stream
+    # Send an abort request to vulcan-stream
+    curl -X POST http://localhost:8080/abort -H 'Content-Type: application/json' -d '{"checks": ["00000000-0000-0000-0000-000000000000"]}'
 
     # Wait for curl to write to output file
     sleep 5
