@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -88,27 +89,46 @@ func wsClient(l *log.Logger, c *config.Config, t string, ch chan bool) {
 // abortCheck performs an HTTP request to stream's abort endpoint
 // in order to abort a check which matches the input token.
 // Requires:
-// - Logger
 // - Config
-// - Token string (the key which will be specified as check ID that can be identified)
-func abortCheck(l *log.Logger, c *config.Config, t string) {
-	l.Print("Waiting for stream to be ready")
-	time.Sleep(3000 * time.Millisecond)
-
-	l.Print("Posting message to stream API")
+// - Token string (the key which was specified as identifiable check ID)
+func abortCheck(c *config.Config, t string) error {
 	abortEndpoint := fmt.Sprintf("http://localhost:%d/abort", c.API.Port)
 	abortPayload := bytes.NewBuffer([]byte(fmt.Sprintf(`{"checks": ["%v"]}`, t)))
 	_, err := http.Post(abortEndpoint, "application/json", abortPayload)
 	if err != nil {
-		l.Printf("Error posting message to stream API: %v", err)
+		return err
 	}
+	return nil
+}
 
-	l.Print("Abort request successflly sent to stream API")
+// verifyChecks verifies that the input token t is included in the aborted
+// checks list returned by checks stream endpoint.
+// Requires:
+// - Config
+// - Token string (the key which was specified as identifiable check ID)
+func verifyChecks(c *config.Config, t string) error {
+	checksEndpoint := fmt.Sprintf("http://localhost:%d/checks", c.API.Port)
+	resp, err := http.Get(checksEndpoint)
+	if err != nil {
+		return err
+	}
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if string(respBody) != t {
+		return fmt.Errorf("checks do not contain t\ngot: %s", string(respBody))
+	}
+	return nil
 }
 
 func main() {
 	logger := log.New(os.Stderr, "vulcan-stream-test-client: ", log.LstdFlags|log.Lshortfile)
 	logger.Print("Starting vulcan-stream-test-client")
+
+	logger.Print("Waiting for stream to be ready")
+	time.Sleep(3000 * time.Millisecond)
 
 	// Read config file
 	if len(os.Args) != 2 {
@@ -120,18 +140,30 @@ func main() {
 	config := config.MustReadConfig(configFile)
 	logger.Print("Config file read successfully")
 
-	// Test
+	// Test WS communication
 	ch := make(chan bool)
-	token := uuid()
-	logger.Printf("Magic token to test message streaming: %v", token)
-	logger.Print("Starting stream WS client")
-	go wsClient(logger, &config, token, ch)
-	go abortCheck(logger, &config, token)
 	go timeout(logger, ch)
 
-	if <-ch {
-		os.Exit(0)
-	} else {
+	token := uuid()
+
+	logger.Print("Starting stream WS client")
+	go wsClient(logger, &config, token, ch)
+
+	logger.Print("Sending abort request to stream API")
+	if err := abortCheck(&config, token); err != nil {
+		logger.Printf("Error sending abort request to stream API: %v", err)
 		os.Exit(1)
 	}
+	logger.Print("Abort request successfully sent to stream API")
+
+	if !<-ch {
+		os.Exit(1)
+	}
+
+	// Test checks endpoint
+	if err := verifyChecks(&config, token); err != nil {
+		logger.Printf("Error verifying checks: %v", err)
+		os.Exit(1)
+	}
+	logger.Print("Checks endpoint response verified successfully")
 }
