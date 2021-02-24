@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	streamReadTimeout = 20
+	streamReadTimeout = 30
 )
 
 // generates random UUID
@@ -45,7 +45,7 @@ func timeout(l *log.Logger, ch chan bool) {
 // - Config
 // - Token string (the key which will verify that stream event has propagated properly)
 // - Channel which will confirm that the message received is well formed
-func wsClient(l *log.Logger, c *config.Config, t string, ch chan bool) {
+func wsClient(l *log.Logger, c config.Config, t string, ch chan bool) {
 	l.Print("Building vulcan-stream URL Endpoint string")
 	streamEndpoint := fmt.Sprintf("ws://localhost:%v/stream",
 		c.API.Port)
@@ -91,7 +91,7 @@ func wsClient(l *log.Logger, c *config.Config, t string, ch chan bool) {
 // Requires:
 // - Config
 // - Token string (the key which was specified as identifiable check ID)
-func abortCheck(c *config.Config, t string) error {
+func abortCheck(c config.Config, t string) error {
 	abortEndpoint := fmt.Sprintf("http://localhost:%d/abort", c.API.Port)
 	abortPayload := bytes.NewBuffer([]byte(fmt.Sprintf(`{"checks": ["%v"]}`, t)))
 	_, err := http.Post(abortEndpoint, "application/json", abortPayload)
@@ -106,7 +106,7 @@ func abortCheck(c *config.Config, t string) error {
 // Requires:
 // - Config
 // - Token string (the key which was specified as identifiable check ID)
-func verifyChecks(c *config.Config, t string) error {
+func verifyChecks(c config.Config, t string) error {
 	checksEndpoint := fmt.Sprintf("http://localhost:%d/checks", c.API.Port)
 	resp, err := http.Get(checksEndpoint)
 	if err != nil {
@@ -147,10 +147,10 @@ func main() {
 	token := uuid()
 
 	logger.Print("Starting stream WS client")
-	go wsClient(logger, &config, token, ch)
+	go wsClient(logger, config, token, ch)
 
 	logger.Print("Sending abort request to stream API")
-	if err := abortCheck(&config, token); err != nil {
+	if err := abortCheck(config, token); err != nil {
 		logger.Printf("Error sending abort request to stream API: %v", err)
 		os.Exit(1)
 	}
@@ -161,7 +161,7 @@ func main() {
 	}
 
 	// Test checks endpoint
-	if err := verifyChecks(&config, token); err != nil {
+	if err := verifyChecks(config, token); err != nil {
 		logger.Printf("Error verifying checks: %v", err)
 		os.Exit(1)
 	}
