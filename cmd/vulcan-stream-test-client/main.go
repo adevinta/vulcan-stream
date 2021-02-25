@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"crypto/rand"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -117,8 +118,13 @@ func verifyChecks(c config.Config, t string) error {
 		return err
 	}
 	defer resp.Body.Close()
-	if string(respBody) != t {
-		return fmt.Errorf("checks do not contain t\ngot: %s", string(respBody))
+	var checks []string
+	err = json.Unmarshal(respBody, &checks)
+	if err != nil {
+		return err
+	}
+	if len(checks) != 1 || checks[0] != t {
+		return fmt.Errorf("checks do not contain t\ngot: %v", checks)
 	}
 	return nil
 }

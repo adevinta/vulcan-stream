@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strings"
 
 	metrics "github.com/adevinta/vulcan-metrics-client"
 	"github.com/sirupsen/logrus"
@@ -92,7 +91,13 @@ func (a *API) checksHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write([]byte(strings.Join(checks, newline)))
+	checksArray, err := json.Marshal(checks)
+	if err != nil {
+		writeErr(w, err)
+		return
+	}
+
+	w.Write(checksArray)
 }
 
 // abortHandler handles an abort checks request.
