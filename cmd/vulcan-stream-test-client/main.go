@@ -46,7 +46,7 @@ func timeout(l *log.Logger, ch chan bool) {
 // - Config
 // - Token string (the key which will verify that stream event has propagated properly)
 // - Channel which will confirm that the message received is well formed
-func wsClient(l *log.Logger, c config.Config, t string, ch chan bool) {
+func wsClient(l *log.Logger, c config.Config, t string, resCh chan bool, conCh chan struct{}) {
 	l.Print("Building vulcan-stream URL Endpoint string")
 	streamEndpoint := fmt.Sprintf("ws://localhost:%v/stream",
 		c.API.Port)
@@ -57,6 +57,8 @@ func wsClient(l *log.Logger, c config.Config, t string, ch chan bool) {
 		log.Fatalf("Error while connecting to topic: %v", err)
 	}
 	defer conn.Close()
+
+	conCh <- struct{}{}
 
 	message := stream.Message{}
 	done := make(chan error)
@@ -71,10 +73,10 @@ func wsClient(l *log.Logger, c config.Config, t string, ch chan bool) {
 			if message.Action != "ping" {
 				if message.CheckID == t {
 					l.Printf("Stream message read successfully: %+v", message)
-					ch <- true
+					resCh <- true
 				} else {
 					l.Printf("Incorrect stream message received: %+v", message)
-					ch <- false
+					resCh <- false
 				}
 			}
 		}
@@ -147,13 +149,15 @@ func main() {
 	logger.Print("Config file read successfully")
 
 	// Test WS communication
-	ch := make(chan bool)
-	go timeout(logger, ch)
+	resCh := make(chan bool)
+	go timeout(logger, resCh)
 
 	token := uuid()
 
 	logger.Print("Starting stream WS client")
-	go wsClient(logger, config, token, ch)
+	conCh := make(chan struct{})
+	go wsClient(logger, config, token, resCh, conCh)
+	<-conCh // wait for wsClient to be connected
 
 	logger.Print("Sending abort request to stream API")
 	if err := abortCheck(config, token); err != nil {
@@ -162,7 +166,7 @@ func main() {
 	}
 	logger.Print("Abort request successfully sent to stream API")
 
-	if !<-ch {
+	if !<-resCh {
 		os.Exit(1)
 	}
 
