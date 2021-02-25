@@ -118,11 +118,13 @@ func (a *API) abortHandler(w http.ResponseWriter, r *http.Request) {
 
 	a.incrNotifiedMssgs(len(req.Checks))
 
-	// TODO: should we return here
-	// and broadcasts aborted
-	// checks asynchronously
-	// E.g.: Have a backlog to
-	// process async in sender.
+	// TODO: should we broadcast
+	// checks async once they are
+	// stored so we don't block
+	// sync HTTP request?
+	// E.g: have a backlog in sender
+	// and a goroutine which consumes
+	// from that.
 
 	for _, c := range req.Checks {
 		m := Message{

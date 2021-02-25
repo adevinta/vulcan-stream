@@ -2,25 +2,40 @@
 
 # Vulcan Stream
 
-Vulcan Stream provides a one-way communication channel from Vulcan Persistence to Vulcan Agents.
+Vulcan Stream provides a channel of communication between Vulcan Scan Engine and the Vulcan Agents.
 
-Vulcan Persistence requires broadcast communication with Vulcan Agents in order to manage the Agent pool and control checks in execution. Because Agents might not be reachable from the internet, the Stream provides a websocket stream that Agents connect to in order to receive input from the Persistence.
-
-### Communication Flow
-
-![Alt text](/_doc/img/VulcanStreamCommunicationFlow.png)
+Vulcan Scan Engine requires broadcast communication with Vulcan Agents in order to manage the Agent pool and control checks in execution. Because Agents might not be reachable from the internet, the Stream provides a websocket stream that Agents connect to in order to receive input from the Scan Engine.
 
 ### Requirements
-
 Vulcan Stream works on top of two main services:
-- Postgres [NOTIFY](https://www.postgresql.org/docs/9.6/static/sql-notify.html)/[LISTEN](https://www.postgresql.org/docs/9.6/static/sql-listen.html)
 - [Go Websocket Events](https://github.com/danfaizer/gowse)
+- [Redis](https://redis.io/)
 
-Vulcan Stream leverages Postgres NOTIFY/LISTEN feature to publish real-time messages to a websocket stream.
+### Constraints
+Current implementation of vulcan-stream must be deployed as a single instance.
+The reason for this is we took a design decision to maintain a local in memory cache to speed up checks endpoint requests so we could maximize Vulcan agents performance, which have to query this endpoint before executing each check.
 
-#### Why Postgres NOTIFY/LISTEN
+### API
+Vulcan Stream exposes two endpoints to abort and retrieve the list of aborted checks.
 
-We thought about using AWS SNS and/or SQS to get notifications from Vulcan Persistence and publishing messages to the websocket stream. However, as per the nature of AWS SNS/SQS, simplicity, and because we already had Postgres as a requirement in Vulcan infrastructure, we saw the NOTIFY/LISTEN feature as the best approach to real-time broadcast notifications with proper levels of resilience and scalability.
+Abort checks:
+```
+curl -X POST https://stream.vulcan.com/abort -H "Content-Type: application/json" -d '{"checks": ["<check_id1>", "<check_id2>", ... ]}'
+->
+<-
+200 OK
+```
+
+Get checks:
+```
+curl -X GET https://stream.vulcan.com/checks
+->
+<-
+200 OK 
+<check_id1>
+<check_id2>
+...
+```
 
 ### Build & Run
 
@@ -28,14 +43,14 @@ Two binaries are provided:
 - vulcan-stream
 - vulcan-stream-test-client
 
-Assuming you have Docker in your machine and there are no services listening on ports `5432` or `8080`.
+Assuming you have Docker in your machine and there are no services listening on ports `6379` or `8080`.
 
 Run vulcan-stream:
 
 ```
 go get -x github.com/adevinta/vulcan-stream/cmd/vulcan-stream
 
-docker run -d -p 5432:5432 -e POSTGRES_USER=postgres -e POSTGRES_DB=stream postgres
+docker run -d -p 6379:6379 redis
 
 vulcan-stream ${GOPATH}/src/github.com/adevinta/vulcan-stream/_resources/config/local.toml
 ```
@@ -48,7 +63,7 @@ go get -x github.com/adevinta/vulcan-stream/cmd/vulcan-stream-test-client
 vulcan-stream-test-client ${GOPATH}/src/github.com/adevinta/vulcan-stream.git/_resources/config/local.toml
 ```
 
-Or, connect to the stream and notify some messages:
+Or, connect to the stream and push some messages:
 
 ```
 curl --include --no-buffer --header "Connection: Upgrade" --header "Upgrade: websocket" \
@@ -56,8 +71,7 @@ curl --include --no-buffer --header "Connection: Upgrade" --header "Upgrade: web
         --header "Sec-WebSocket-Key: SGVsbG8sIHdvcmxkIQ==" --header "Sec-WebSocket-Version: 13" \
         "http://localhost:8080/stream" &
 
-psql -c "NOTIFY events, '{\"action\":\"test\", \"check_id\":\"00000000-0000-0000-0000-000000000000\"}';" \
--U postgres -h localhost stream
+curl -X POST http://localhost:8080/abort -H 'Content-Type: application/json' -d '{"checks": ["00000000-0000-0000-0000-000000000000"]}'
 ```
 
 ### Configure
@@ -69,16 +83,14 @@ You can see and modify Vulcan Stream configuration as required:
 
 # Docker execute
 
-Those are the variables you have to setup:
+These are the variables you have to setup:
 
 |Variable|Description|Sample|
 |---|---|---|
 |PORT|Listen http port|8080|
 |LOG_LEVEL||DEBUG|
-|PG_(HOST\|DB\|USER\|PWD\|PORT)|Postgresql variables||
-|PG_SSLMODE|One of these (disable,allow,prefer,require,verify-ca,verify-full)|disable|
-|PG_CA_B64|A base64 encoded ca certificate||
-|STREAM||stream|
+|REDIS_(HOST\|PORT\|USR\|PWD\|PORT\DB)|Redis variables||
+|REDIS_TTL|TTL to apply for aborted check entries|7 days|
 
 ```bash
 docker build . -t vs
