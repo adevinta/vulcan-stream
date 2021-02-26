@@ -95,11 +95,13 @@ func (r *RedisDB) GetChecks(ctx context.Context) ([]string, error) {
 // SetChecks sets input checks in redis as a single transaction.
 func (r *RedisDB) SetChecks(ctx context.Context, checks []string) error {
 	pipe := r.rdb.TxPipeline()
+	defer pipe.Close()
 
 	for _, c := range checks {
 		key := fmt.Sprint(checksKeyPrefix, c)
 		err := pipe.Set(ctx, key, c, r.ttl).Err()
 		if err != nil {
+			pipe.Discard() // nolint
 			return err
 		}
 	}
