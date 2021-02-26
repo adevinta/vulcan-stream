@@ -129,7 +129,7 @@ func NewStorage(db RemoteDB, logger log.FieldLogger) (Storage, error) {
 	var err error
 	storage.cache, err = storage.db.GetChecks(context.Background())
 	if err != nil {
-		return nil, fmt.Errorf("err retrieving remote checks: %v", err)
+		return nil, fmt.Errorf("err retrieving remote checks: %w", err)
 	}
 
 	go storage.refresh()
@@ -161,7 +161,7 @@ func (s *storage) AddAbortedChecks(ctx context.Context, checks []string) error {
 	for i, c := range checks {
 		err := s.db.SetCheck(ctx, c)
 		if err != nil {
-			return fmt.Errorf("%d checks could not be aborted: %v", len(checks)-i, err)
+			return fmt.Errorf("%d checks could not be aborted: %w", len(checks)-i, err)
 		}
 		s.cache = append(s.cache, c)
 	}
