@@ -159,7 +159,7 @@ func (a *API) incrNotifiedMssgs(count int) {
 
 func (a *API) incrBroadcastedMssgs(m Message) {
 	a.metrics.Push(metrics.Metric{
-		Name:  metricNotified,
+		Name:  metricBroadcasted,
 		Typ:   metrics.Count,
 		Value: 1,
 		Tags:  []string{componentTag, fmt.Sprint("action:", m.Action)},
