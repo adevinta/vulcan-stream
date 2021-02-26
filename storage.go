@@ -21,7 +21,7 @@ const (
 // interact with remote DB.
 type RemoteDB interface {
 	GetChecks(ctx context.Context) ([]string, error)
-	SetCheck(ctx context.Context, check string) error
+	SetChecks(ctx context.Context, checks []string) error
 }
 
 // RedisConfig specifies the required
@@ -69,6 +69,7 @@ func (r *RedisDB) GetChecks(ctx context.Context) ([]string, error) {
 		checks []string
 	)
 
+	checks = []string{}
 	match := fmt.Sprint(checksKeyPrefix, "*")
 	for {
 		var keys []string
@@ -91,10 +92,20 @@ func (r *RedisDB) GetChecks(ctx context.Context) ([]string, error) {
 	return checks, nil
 }
 
-// SetCheck sets input check in redis.
-func (r *RedisDB) SetCheck(ctx context.Context, check string) error {
-	key := fmt.Sprint(checksKeyPrefix, check)
-	return r.rdb.Set(ctx, key, check, r.ttl).Err()
+// SetChecks sets input checks in redis as a single transaction.
+func (r *RedisDB) SetChecks(ctx context.Context, checks []string) error {
+	pipe := r.rdb.TxPipeline()
+
+	for _, c := range checks {
+		key := fmt.Sprint(checksKeyPrefix, c)
+		err := pipe.Set(ctx, key, c, r.ttl).Err()
+		if err != nil {
+			return err
+		}
+	}
+
+	_, err := pipe.Exec(ctx)
+	return err
 }
 
 // Storage represents the stream storage
@@ -158,13 +169,11 @@ func (s *storage) AddAbortedChecks(ctx context.Context, checks []string) error {
 	// local cache and set that value in remote DB
 	// instead of performing extra requests to retrieve
 	// all remote values.
-	for i, c := range checks {
-		err := s.db.SetCheck(ctx, c)
-		if err != nil {
-			return fmt.Errorf("%d checks could not be aborted: %w", len(checks)-i, err)
-		}
-		s.cache = append(s.cache, c)
+	err := s.db.SetChecks(ctx, checks)
+	if err != nil {
+		return err
 	}
+	s.cache = append(s.cache, checks...)
 
 	return nil
 }
