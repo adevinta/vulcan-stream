@@ -32,8 +32,7 @@ curl -X GET https://stream.vulcan.com/checks
 ->
 <-
 200 OK 
-<check_id1>
-<check_id2>
+["<check_id1>", "<check_id2>", ...]
 ...
 ```
 

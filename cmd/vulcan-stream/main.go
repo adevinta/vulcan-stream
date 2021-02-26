@@ -38,14 +38,11 @@ func main() {
 
 	sender := stream.NewSender(logger, config.Sender)
 
-	storage, err := stream.NewRedisStorage(config.Storage)
+	storage, err := stream.NewStorage(stream.NewRedisDB(config.Storage), logger)
 	if err != nil {
 		logger.WithError(err).Panic()
 	}
 
 	api := stream.NewAPI(config.API.Port, sender, storage, logger, metrics)
-
-	go api.Start()
-
-	select {}
+	api.Start()
 }

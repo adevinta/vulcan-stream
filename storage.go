@@ -7,6 +7,7 @@ import (
 	"time"
 
 	redis "github.com/go-redis/redis/v8"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -16,16 +17,12 @@ const (
 	defScanChunk    = 50     // elements per redis SCAN chunk
 )
 
-// Storage represents the stream storage
-// for aborted checks.
-type Storage interface {
-	GetAbortedChecks(ctx context.Context) ([]string, error)
-	AddAbortedChecks(ctx context.Context, checks []string) error
+// RemoteDB represents interface to
+// interact with remote DB.
+type RemoteDB interface {
+	GetChecks(ctx context.Context) ([]string, error)
+	SetCheck(ctx context.Context, check string) error
 }
-
-// cache is a local cache for
-// the storage aborted checks.
-type cache []string
 
 // RedisConfig specifies the required
 // config for RedisStorage.
@@ -38,20 +35,15 @@ type RedisConfig struct {
 	TTL  int
 }
 
-// RedisStorage is the Redis implementation
-// for the stream Storage.
-type RedisStorage struct {
-	sync.RWMutex
+// RedisDB is the implementation of
+// a RemoteDB for a Redis database.
+type RedisDB struct {
 	rdb *redis.Client
-	// Because a current condition for stream is that
-	// it runs as a single instance, we can mantain a local
-	// cache in sync with remote storage to speed up retrivals.
-	cache cache
-	ttl   time.Duration
+	ttl time.Duration
 }
 
-// NewRedisStorage builds a new RedisStorage.
-func NewRedisStorage(c RedisConfig) (*RedisStorage, error) {
+// NewRedisDB builds a new redis DB connector.
+func NewRedisDB(c RedisConfig) *RedisDB {
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprint(c.Host, ":", c.Port),
 		Username: c.Usr,
@@ -63,65 +55,14 @@ func NewRedisStorage(c RedisConfig) (*RedisStorage, error) {
 		c.TTL = defTTL
 	}
 
-	storage := &RedisStorage{
-		rdb:   rdb,
-		cache: cache{},
-		ttl:   time.Duration(c.TTL) * time.Hour,
+	return &RedisDB{
+		rdb: rdb,
+		ttl: time.Duration(c.TTL) * time.Hour,
 	}
-
-	var err error
-	storage.cache, err = storage.getRemoteChecks(context.Background())
-	if err != nil {
-		return nil, fmt.Errorf("Err retrieving checks: %v", err)
-	}
-
-	go storage.refresh()
-
-	return storage, nil
 }
 
-// GetAbortedChecks returns the list of UUIDs for the currently aborted checks.
-func (r *RedisStorage) GetAbortedChecks(ctx context.Context) ([]string, error) {
-	r.RLock()
-	defer r.RUnlock()
-
-	// Because we have mantained local cache in sync
-	// with remote storage, we can return local copy
-	// directly instead of performing requests to redis.
-	return r.cache, nil
-}
-
-// AddAbortedChecks adds the given checks to the current aborted checks list.
-func (r *RedisStorage) AddAbortedChecks(ctx context.Context, checks []string) error {
-	r.Lock()
-	defer r.Unlock()
-
-	// Because we have mantained local cache in sync
-	// with remote storage, we can add new checks to
-	// local cache and set that value in redis instead
-	// of performing extra requests to retrieve all
-	// remote values.
-	for i, c := range checks {
-		key := fmt.Sprint(checksKeyPrefix, c)
-		err := r.rdb.Set(ctx, key, c, r.ttl).Err()
-		if err != nil {
-			return fmt.Errorf("%d checks could not be aborted: %v", len(checks)-i, err)
-		}
-		r.cache = append(r.cache, c)
-	}
-
-	return nil
-}
-
-// getRemoteChecks retrieves the checks stored in redis.
-// Because we want to set a TTL per check, we had to store one entry per check,
-// so to retrieve them we have to perform a SCAN matching 'check:*' and retrieve
-// the value per each obtained key.
-// SCAN is performed in chunks so we don't block redis when there are many entries.
-func (r *RedisStorage) getRemoteChecks(ctx context.Context) ([]string, error) {
-	r.RLock()
-	defer r.RUnlock()
-
+// GetChecks returns checks stored in redis.
+func (r *RedisDB) GetChecks(ctx context.Context) ([]string, error) {
 	var (
 		err    error
 		cursor uint64
@@ -150,15 +91,98 @@ func (r *RedisStorage) getRemoteChecks(ctx context.Context) ([]string, error) {
 	return checks, nil
 }
 
-// refresh refreshes the redis storage local cache
+// SetCheck sets input check in redis.
+func (r *RedisDB) SetCheck(ctx context.Context, check string) error {
+	key := fmt.Sprint(checksKeyPrefix, check)
+	return r.rdb.Set(ctx, key, check, r.ttl).Err()
+}
+
+// Storage represents the stream storage
+// for aborted checks.
+type Storage interface {
+	GetAbortedChecks(ctx context.Context) ([]string, error)
+	AddAbortedChecks(ctx context.Context, checks []string) error
+}
+
+// cache is a local cache for
+// the storage aborted checks.
+type cache []string
+
+type storage struct {
+	sync.RWMutex
+	db RemoteDB
+	// Because a current constraint for stream is that
+	// it runs as a single instance, we can mantain a local
+	// cache in sync with remote storage to speed up retrivals.
+	cache cache
+	log   log.FieldLogger
+}
+
+// NewStorage builds a new Storage.
+func NewStorage(db RemoteDB, logger log.FieldLogger) (Storage, error) {
+	storage := &storage{
+		db:    db,
+		cache: cache{},
+		log:   logger,
+	}
+
+	var err error
+	storage.cache, err = storage.db.GetChecks(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("err retrieving remote checks: %v", err)
+	}
+
+	go storage.refresh()
+
+	return storage, nil
+}
+
+// GetAbortedChecks returns the list of UUIDs for the currently aborted checks.
+func (s *storage) GetAbortedChecks(ctx context.Context) ([]string, error) {
+	s.RLock()
+	defer s.RUnlock()
+
+	// Because we have mantained local cache in sync
+	// with remote storage, we can return local copy
+	// directly instead of performing requests to redis.
+	return s.cache, nil
+}
+
+// AddAbortedChecks adds the given checks to the current aborted checks list.
+func (s *storage) AddAbortedChecks(ctx context.Context, checks []string) error {
+	s.Lock()
+	defer s.Unlock()
+
+	// Because we have mantained local cache in sync
+	// with remote storage, we can add new checks to
+	// local cache and set that value in remote DB
+	// instead of performing extra requests to retrieve
+	// all remote values.
+	for i, c := range checks {
+		err := s.db.SetCheck(ctx, c)
+		if err != nil {
+			return fmt.Errorf("%d checks could not be aborted: %v", len(checks)-i, err)
+		}
+		s.cache = append(s.cache, c)
+	}
+
+	return nil
+}
+
+// refresh refreshes the storage's local cache
 // periodically so checks that have been expired
 // remotely due to TTL, are also removed locally.
-func (r *RedisStorage) refresh() {
+func (s *storage) refresh() {
+	var err error
 	ctx := context.Background()
+
 	for {
 		time.Sleep(time.Duration(rfshPeriod) * time.Hour)
-		r.Lock()
-		r.cache, _ = r.getRemoteChecks(ctx)
-		r.Unlock()
+		s.Lock()
+		s.cache, err = s.db.GetChecks(ctx)
+		if err != nil {
+			s.log.Errorf("error refreshing remote checks: %v", err)
+		}
+		s.Unlock()
 	}
 }
