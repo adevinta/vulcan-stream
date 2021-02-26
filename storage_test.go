@@ -17,14 +17,14 @@ var (
 
 type mockRemoteDB struct {
 	getChecksF func(context.Context) ([]string, error)
-	setCheckF  func(context.Context, string) error
+	setChecksF func(context.Context, []string) error
 }
 
 func (m mockRemoteDB) GetChecks(ctx context.Context) ([]string, error) {
 	return m.getChecksF(ctx)
 }
-func (m mockRemoteDB) SetCheck(ctx context.Context, check string) error {
-	return m.setCheckF(ctx, check)
+func (m mockRemoteDB) SetChecks(ctx context.Context, checks []string) error {
+	return m.setChecksF(ctx, checks)
 }
 
 func TestGetAbortedChecks(t *testing.T) {
@@ -90,7 +90,7 @@ func TestAddAbortedChecks(t *testing.T) {
 		{
 			name: "Happy path",
 			db: mockRemoteDB{
-				setCheckF: func(ctx context.Context, check string) error {
+				setChecksF: func(ctx context.Context, checks []string) error {
 					return nil
 				},
 			},
@@ -98,17 +98,14 @@ func TestAddAbortedChecks(t *testing.T) {
 			wantCache:   []string{"checkID1", "checkID2"},
 		},
 		{
-			name: "Sets first, fails second",
+			name: "Error on set",
 			db: mockRemoteDB{
-				setCheckF: func(ctx context.Context, check string) error {
-					if check == "checkID2" {
-						return errMockSet
-					}
-					return nil
+				setChecksF: func(ctx context.Context, checks []string) error {
+					return errMockSet
 				},
 			},
 			abortChecks: []string{"checkID1", "checkID2"},
-			wantCache:   []string{"checkID1"},
+			wantCache:   []string{},
 			wantErr:     errMockSet,
 		},
 	}
@@ -139,7 +136,7 @@ func TestConcurrentRW(t *testing.T) {
 	log := log.New()
 
 	db := mockRemoteDB{
-		setCheckF: func(ctx context.Context, check string) error {
+		setChecksF: func(ctx context.Context, checks []string) error {
 			time.Sleep(1 * time.Second) // mock locking time
 			return nil
 		},
