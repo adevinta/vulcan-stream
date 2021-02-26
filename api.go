@@ -20,8 +20,6 @@ const (
 	metricBroadcasted = "vulcan.stream.mssgs.broadcasted"
 
 	componentTag = "component:stream"
-
-	newline = "\n"
 )
 
 // APIConfig represents the config
