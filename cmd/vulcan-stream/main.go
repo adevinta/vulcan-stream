@@ -29,7 +29,7 @@ func main() {
 	}()
 
 	// Build metrics client.
-	metricsClient, err := metrics.NewClient()
+	metrics, err := metrics.NewClient()
 	if err != nil {
 		log.Fatalf("unable to build metrics client: %v", err)
 	}
@@ -37,14 +37,12 @@ func main() {
 	logger.Info("Starting Vulcan Stream")
 
 	sender := stream.NewSender(logger, config.Sender)
-	go sender.Start()
 
-	receiver, err := stream.NewReceiver(logger, config.Receiver, sender, metricsClient)
+	storage, err := stream.NewStorage(stream.NewRedisDB(config.Storage), logger)
 	if err != nil {
 		logger.WithError(err).Panic()
 	}
 
-	go receiver.Start()
-
-	select {}
+	api := stream.NewAPI(config.API.Port, sender, storage, logger, metrics)
+	api.Start()
 }

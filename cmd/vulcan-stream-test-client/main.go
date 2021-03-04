@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"crypto/rand"
-	"database/sql"
+	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -16,7 +18,7 @@ import (
 )
 
 const (
-	streamReadTimeout = 20
+	streamReadTimeout = 30
 )
 
 // generates random UUID
@@ -44,10 +46,10 @@ func timeout(l *log.Logger, ch chan bool) {
 // - Config
 // - Token string (the key which will verify that stream event has propagated properly)
 // - Channel which will confirm that the message received is well formed
-func wsClient(l *log.Logger, c *config.Config, t string, ch chan bool) {
+func wsClient(l *log.Logger, c config.Config, t string, resCh chan bool, conCh chan struct{}) {
 	l.Print("Building vulcan-stream URL Endpoint string")
 	streamEndpoint := fmt.Sprintf("ws://localhost:%v/stream",
-		c.Sender.HTTPPort)
+		c.API.Port)
 
 	l.Printf("Client connecting to vulcan-stream URL: %v", streamEndpoint)
 	conn, _, err := websocket.DefaultDialer.Dial(streamEndpoint, http.Header{})
@@ -55,6 +57,8 @@ func wsClient(l *log.Logger, c *config.Config, t string, ch chan bool) {
 		log.Fatalf("Error while connecting to topic: %v", err)
 	}
 	defer conn.Close()
+
+	conCh <- struct{}{}
 
 	message := stream.Message{}
 	done := make(chan error)
@@ -69,10 +73,10 @@ func wsClient(l *log.Logger, c *config.Config, t string, ch chan bool) {
 			if message.Action != "ping" {
 				if message.CheckID == t {
 					l.Printf("Stream message read successfully: %+v", message)
-					ch <- true
+					resCh <- true
 				} else {
 					l.Printf("Incorrect stream message received: %+v", message)
-					ch <- false
+					resCh <- false
 				}
 			}
 		}
@@ -85,38 +89,55 @@ func wsClient(l *log.Logger, c *config.Config, t string, ch chan bool) {
 	}
 }
 
-// notifyEvent generates a PostgreSQL notification
+// abortCheck performs an HTTP request to stream's abort endpoint
+// in order to abort a check which matches the input token.
 // Requires:
-// - Logger
 // - Config
-// - Token string (the key which will generate an event that can be identified)
-func notifyEvent(l *log.Logger, c *config.Config, t string) {
-	l.Print("Waiting for stream to be ready")
-	time.Sleep(3000 * time.Millisecond)
-	l.Print("Creating database connection string")
-	connectionString := fmt.Sprintf(
-		"dbname='%v' user='%v' password='%v' host=%v port=%v sslmode=%v",
-		c.Receiver.DBName, c.Receiver.DBUser, c.Receiver.DBPass, c.Receiver.DBHost, c.Receiver.DBPort, c.Receiver.DBSSLMode)
-	l.Print("Creating database connection")
-	dbConnection, err := sql.Open("postgres", connectionString)
+// - Token string (the key which was specified as identifiable check ID)
+func abortCheck(c config.Config, t string) error {
+	abortEndpoint := fmt.Sprintf("http://localhost:%d/abort", c.API.Port)
+	abortPayload := bytes.NewBuffer([]byte(fmt.Sprintf(`{"checks": ["%v"]}`, t)))
+	_, err := http.Post(abortEndpoint, "application/json", abortPayload)
 	if err != nil {
-		l.Fatal("Failed connecting to the database")
+		return err
 	}
-	l.Print("Database connection created")
-	l.Print("Creating event message")
-	notification := fmt.Sprintf("NOTIFY %v, '{\"action\":\"test\",\"check_id\":\"%v\"}'", c.Receiver.StreamChannel, t)
-	l.Printf("Event message created: %v", notification)
-	l.Print("Notifying message to the database")
-	_, err = dbConnection.Exec(notification)
+	return nil
+}
+
+// verifyChecks verifies that the input token t is included in the aborted
+// checks list returned by checks stream endpoint.
+// Requires:
+// - Config
+// - Token string (the key which was specified as identifiable check ID)
+func verifyChecks(c config.Config, t string) error {
+	checksEndpoint := fmt.Sprintf("http://localhost:%d/checks", c.API.Port)
+	resp, err := http.Get(checksEndpoint)
 	if err != nil {
-		l.Printf("Error notifying the database: %v", err)
+		return err
 	}
-	l.Print("Message notified to the database")
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	var checks []string
+	err = json.Unmarshal(respBody, &checks)
+	if err != nil {
+		return err
+	}
+	if len(checks) != 1 || checks[0] != t {
+		return fmt.Errorf("checks do not contain t\ngot: %v", checks)
+	}
+	return nil
 }
 
 func main() {
 	logger := log.New(os.Stderr, "vulcan-stream-test-client: ", log.LstdFlags|log.Lshortfile)
 	logger.Print("Starting vulcan-stream-test-client")
+
+	logger.Print("Waiting for stream to be ready")
+	time.Sleep(3000 * time.Millisecond)
+
 	// Read config file
 	if len(os.Args) != 2 {
 		log.Fatal("Usage: vulcan-stream-test-client config-file")
@@ -127,17 +148,32 @@ func main() {
 	config := config.MustReadConfig(configFile)
 	logger.Print("Config file read successfully")
 
-	ch := make(chan bool)
-	token := uuid()
-	logger.Printf("Magic token to test message streaming: %v", token)
-	logger.Print("Starting ServerSideEvents client")
-	go wsClient(logger, &config, token, ch)
-	go notifyEvent(logger, &config, token)
-	go timeout(logger, ch)
+	// Test WS communication
+	resCh := make(chan bool)
+	go timeout(logger, resCh)
 
-	if <-ch {
-		os.Exit(0)
-	} else {
+	token := uuid()
+
+	logger.Print("Starting stream WS client")
+	conCh := make(chan struct{})
+	go wsClient(logger, config, token, resCh, conCh)
+	<-conCh // wait for wsClient to be connected
+
+	logger.Print("Sending abort request to stream API")
+	if err := abortCheck(config, token); err != nil {
+		logger.Printf("Error sending abort request to stream API: %v", err)
 		os.Exit(1)
 	}
+	logger.Print("Abort request successfully sent to stream API")
+
+	if !<-resCh {
+		os.Exit(1)
+	}
+
+	// Test checks endpoint
+	if err := verifyChecks(config, token); err != nil {
+		logger.Printf("Error verifying checks: %v", err)
+		os.Exit(1)
+	}
+	logger.Print("Checks endpoint response verified successfully")
 }

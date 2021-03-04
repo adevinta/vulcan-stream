@@ -8,16 +8,13 @@ const (
 	// Logger
 	logFile  = ""
 	logLevel = "DEBUG"
-	// Receiver
-	dbName        = "stream"
-	dbUser        = "postgres"
-	dbPass        = ""
-	dbHost        = "localhost"
-	dbPort        = 5432
-	dbSSLMode     = "disable"
-	streamChannel = "events"
+	// API
+	httpPort = 8080
+	// Storage
+	storageHost = "127.0.0.1"
+	storagePort = 6379
 	// Sender
-	httpPort     = 8080
+	httpStream   = "stream"
 	pingInterval = 5
 )
 
@@ -31,31 +28,20 @@ func TestMustReadConfig(t *testing.T) {
 	if cfg.Logger.LogLevel != logLevel {
 		t.Errorf("Test failed, expected: '%s', got:  '%s'", logLevel, cfg.Logger.LogLevel)
 	}
-	// Receiver
-	if cfg.Receiver.DBUser != dbUser {
-		t.Errorf("Test failed, expected: '%s', got:  '%s'", dbUser, cfg.Receiver.DBUser)
+	// API
+	if cfg.API.Port != httpPort {
+		t.Errorf("Test failed, expected: '%d', got:  '%d'", httpPort, cfg.API.Port)
 	}
-	if cfg.Receiver.DBHost != dbHost {
-		t.Errorf("Test failed, expected: '%s', got:  '%s'", dbHost, cfg.Receiver.DBHost)
+	// Storage
+	if cfg.Storage.Host != storageHost {
+		t.Errorf("Test failed, expected: '%s', got:  '%s'", storageHost, cfg.Storage.Host)
 	}
-	if cfg.Receiver.DBName != dbName {
-		t.Errorf("Test failed, expected: '%s', got:  '%s'", dbName, cfg.Receiver.DBName)
-	}
-	if cfg.Receiver.DBPass != dbPass {
-		t.Errorf("Test failed, expected: '%s', got:  '%s'", dbPass, cfg.Receiver.DBPass)
-	}
-	if cfg.Receiver.DBPort != dbPort {
-		t.Errorf("Test failed, expected: '%d', got:  '%d'", dbPort, cfg.Receiver.DBPort)
-	}
-	if cfg.Receiver.DBSSLMode != dbSSLMode {
-		t.Errorf("Test failed, expected: '%s', got:  '%s'", dbSSLMode, cfg.Receiver.DBSSLMode)
-	}
-	if cfg.Receiver.StreamChannel != streamChannel {
-		t.Errorf("Test failed, expected: '%s', got:  '%s'", streamChannel, cfg.Receiver.StreamChannel)
+	if cfg.Storage.Port != storagePort {
+		t.Errorf("Test failed, expected: '%d', got:  '%d'", storagePort, cfg.Storage.Port)
 	}
 	// Sender
-	if cfg.Sender.HTTPPort != httpPort {
-		t.Errorf("Test failed, expected: '%d', got:  '%d'", httpPort, cfg.Sender.HTTPPort)
+	if cfg.Sender.HTTPStream != httpStream {
+		t.Errorf("Test failed, expected: '%s', got:  '%s'", httpStream, cfg.Sender.HTTPStream)
 	}
 	if cfg.Sender.PingInterval != pingInterval {
 		t.Errorf("Test failed, expected: '%d', got:  '%d'", pingInterval, cfg.Sender.PingInterval)

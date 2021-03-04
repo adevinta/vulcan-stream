@@ -3,15 +3,17 @@
 LogFile = ""
 LogLevel = "DEBUG"
 
-[Receiver]
-DBName = "stream"
-DBUser = "postgres"
-DBPass = ""
-DBHost = "localhost"
-DBPort = 5432
-DBSSLMode = "disable"
-StreamChannel = "events"
+[API]
+Port = 8080
+
+[Storage]
+Host = "127.0.0.1"
+Port = 6379
+Usr = ""
+Pwd = ""
+DB = 0
+TTL = 0
 
 [Sender]
-HTTPPort = 8080
+HTTPStream = "stream"
 PingInterval = 5

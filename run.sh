@@ -2,8 +2,12 @@
 
 export PORT=${PORT:-8080}
 export LOG_LEVEL=${LOG_LEVEL:-Debug}
-export PG_PORT=${PG_PORT:-5432}
 export DOGSTATSD_ENABLED=${DOGSTATSD_ENABLED:-false}
+export REDIS_PORT=${REDIS_PORT:-6379}
+export REDIS_USR=${REDIS_USR:-}
+export REDIS_PWD=${REDIS_PWD:-}
+export REDIS_DB=${REDIS_DB:-0}
+export REDIS_TTL=${REDIS_TTL:-0}
 
 # Apply env variables
 cat config.toml | envsubst > run.toml

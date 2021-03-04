@@ -10,9 +10,10 @@ import (
 
 // Config defines required configuration for VulcanStream
 type Config struct {
-	Logger   stream.LoggerConfig   `toml:"Logger"`
-	Receiver stream.ReceiverConfig `toml:"Receiver"`
-	Sender   stream.SenderConfig   `toml:"Sender"`
+	Logger  stream.LoggerConfig `toml:"Logger"`
+	Sender  stream.SenderConfig `toml:"Sender"`
+	API     stream.APIConfig    `toml:"API"`
+	Storage stream.RedisConfig  `toml:"Storage"`
 }
 
 // MustReadConfig reads TOML file with Vulcan Stream configuration
