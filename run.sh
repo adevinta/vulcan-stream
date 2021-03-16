@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# Copyright 2019 Adevinta
+
 export PORT=${PORT:-8080}
 export LOG_LEVEL=${LOG_LEVEL:-Debug}
 export DOGSTATSD_ENABLED=${DOGSTATSD_ENABLED:-false}

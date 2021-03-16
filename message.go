@@ -1,3 +1,7 @@
+/*
+Copyright 2019 Adevinta
+*/
+
 package stream
 
 // Message describes a stream message
