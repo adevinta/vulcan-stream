@@ -1,0 +1,21 @@
+conf:
+  repositories:
+    default: http://raw.githubusercontent.com/adevinta/vulcan-local/master/script/checktypes-stable.json
+
+targets:
+
+  # Scannig local docker images not available yet.
+  - target: registry.hub.docker.com/adevinta/vulcan-stream:latest
+
+  - target: http://localhost:8080/
+    options:
+      max_scan_duration: 1
+
+  - target: .
+
+reporting:
+  threshold: HIGH
+  exclusions:
+    - affectedResource: api.go
+      target: .
+      summary: Use Tls

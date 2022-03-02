@@ -16,5 +16,6 @@ script:
   - _script/test
   - vulcan-local -t . -s all
   - vulcan-local -t http://localhost:8080/ -s all
+  - vulcan-local -c vulcan.yaml -s all
 after_success:
   - bash -c 'source <(curl -s https://raw.githubusercontent.com/adevinta/vulcan-cicd/master/docker.sh)'
