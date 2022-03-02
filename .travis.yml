@@ -9,8 +9,11 @@ services:
   - redis-server
 gobuild_args: -a -tags netgo -ldflags '-w'
 go_import_path: github.com/adevinta/vulcan-stream
+before_script: 
+  - curl -sfL https://raw.githubusercontent.com/adevinta/vulcan-local/dev/script/get | sh
 script:
   - go test -v $(go list ./... | grep -v /vendor/)
+  - vulcan-local -t . -s all -l debug
   - _script/test
 after_success:
   - bash -c 'source <(curl -s https://raw.githubusercontent.com/adevinta/vulcan-cicd/master/docker.sh)'
