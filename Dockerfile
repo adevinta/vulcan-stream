@@ -1,6 +1,6 @@
 # Copyright 2019 Adevinta
 
-FROM golang:1.13-alpine3.10 as builder
+FROM golang:1.18-alpine3.15 as builder
 
 WORKDIR /app
 
@@ -17,7 +17,7 @@ COPY . .
 RUN go build -o vulcan-stream -a -tags netgo -ldflags '-w' cmd/vulcan-stream/main.go
 
 # final stage
-FROM alpine:3.10
+FROM alpine:3.15
 RUN apk add --no-cache --update gettext
 
 ARG BUILD_RFC3339="1970-01-01T00:00:00Z"
