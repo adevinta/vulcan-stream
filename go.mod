@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/BurntSushi/toml v0.3.1
-	github.com/adevinta/vulcan-metrics-client v1.0.0-rc1
+	github.com/adevinta/vulcan-metrics-client v1.0.0
 	github.com/danfaizer/gowse v0.0.0-20190820120814-8f5010580eaf
 	github.com/go-redis/redis/v8 v8.6.0
 	github.com/gorilla/websocket v1.4.1
