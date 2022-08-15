@@ -17,7 +17,7 @@ COPY . .
 RUN go build -o vulcan-stream -a -tags netgo -ldflags '-w' cmd/vulcan-stream/main.go
 
 # final stage
-FROM alpine:3.16.0
+FROM alpine:3.16.2
 RUN apk add --no-cache --update gettext
 
 ARG BUILD_RFC3339="1970-01-01T00:00:00Z"
