@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/BurntSushi/toml v0.3.1
-	github.com/adevinta/vulcan-metrics-client v1.0.0
+	github.com/adevinta/vulcan-metrics-client v1.0.1
 	github.com/danfaizer/gowse v1.0.0
 	github.com/go-redis/redis/v8 v8.6.0
 	github.com/gorilla/websocket v1.5.0
@@ -19,5 +19,5 @@ require (
 	go.opentelemetry.io/otel v0.17.0 // indirect
 	go.opentelemetry.io/otel/metric v0.17.0 // indirect
 	go.opentelemetry.io/otel/trace v0.17.0 // indirect
-	golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c // indirect
+	golang.org/x/sys v0.7.0 // indirect
 )
