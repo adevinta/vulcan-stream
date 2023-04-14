@@ -3,7 +3,7 @@ module github.com/adevinta/vulcan-stream
 go 1.18
 
 require (
-	github.com/BurntSushi/toml v0.3.1
+	github.com/BurntSushi/toml v1.2.1
 	github.com/adevinta/vulcan-metrics-client v1.0.1
 	github.com/danfaizer/gowse v1.0.0
 	github.com/go-redis/redis/v8 v8.6.0
