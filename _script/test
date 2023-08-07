@@ -20,5 +20,10 @@ clean
 
 # Start vulcan-stream
 vulcan-stream "${TRAVIS_BUILD_DIR}"/_resources/config/test.toml &
+PID=$!
+
 test_ws_client
+
+kill -9 $PID
+
 exit 0
