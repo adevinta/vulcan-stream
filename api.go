@@ -8,7 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	metrics "github.com/adevinta/vulcan-metrics-client"
@@ -104,7 +104,7 @@ func (a *API) checksHandler(w http.ResponseWriter, r *http.Request) {
 
 // abortHandler handles an abort checks request.
 func (a *API) abortHandler(w http.ResponseWriter, r *http.Request) {
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		writeErr(w, err)
 		return

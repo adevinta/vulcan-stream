@@ -5,8 +5,8 @@ Copyright 2019 Adevinta
 package config
 
 import (
-	"io/ioutil"
 	"log"
+	"os"
 
 	"github.com/BurntSushi/toml"
 	stream "github.com/adevinta/vulcan-stream"
@@ -22,7 +22,7 @@ type Config struct {
 
 // MustReadConfig reads TOML file with Vulcan Stream configuration
 func MustReadConfig(path string) Config {
-	configData, err := ioutil.ReadFile(path)
+	configData, err := os.ReadFile(path)
 	if err != nil {
 		log.Fatalf("Cannot read configuration file (%v)", err)
 	}
