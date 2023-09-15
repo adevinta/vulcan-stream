@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	redis "github.com/go-redis/redis/v8"
+	redis "github.com/redis/go-redis/v9"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -99,8 +99,6 @@ func (r *RedisDB) GetChecks(ctx context.Context) ([]string, error) {
 // SetChecks sets input checks in redis as a single transaction.
 func (r *RedisDB) SetChecks(ctx context.Context, checks []string) error {
 	pipe := r.rdb.TxPipeline()
-	defer pipe.Close()
-
 	for _, c := range checks {
 		key := fmt.Sprint(checksKeyPrefix, c)
 		err := pipe.Set(ctx, key, c, r.ttl).Err()
