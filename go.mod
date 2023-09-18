@@ -8,7 +8,7 @@ require (
 	github.com/danfaizer/gowse v1.0.0
 	github.com/gorilla/websocket v1.5.0
 	github.com/redis/go-redis/v9 v9.1.0
-	github.com/sirupsen/logrus v1.7.0
+	github.com/sirupsen/logrus v1.9.3
 )
 
 require (
