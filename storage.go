@@ -53,8 +53,7 @@ func NewRedisDB(c RedisConfig) *RedisDB {
 		Username:    c.Usr,
 		Password:    c.Pwd,
 		DB:          c.DB,
-		DialTimeout: -1,
-		ReadTimeout: -1,
+		DialTimeout: time.Second * 5,
 	})
 
 	if c.TTL == 0 {
@@ -195,7 +194,7 @@ func (s *storage) refresh() {
 
 	for {
 		// time.Sleep(time.Duration(rfshPeriod) * time.Hour)
-		time.Sleep(time.Minute * 5)
+		time.Sleep(time.Minute)
 		s.Lock()
 		start := time.Now()
 		s.cache, err = s.db.GetChecks(ctx)
