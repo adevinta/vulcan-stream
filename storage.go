@@ -54,6 +54,7 @@ func NewRedisDB(c RedisConfig) *RedisDB {
 		Password:    c.Pwd,
 		DB:          c.DB,
 		DialTimeout: -1,
+		ReadTimeout: -1,
 	})
 
 	if c.TTL == 0 {
