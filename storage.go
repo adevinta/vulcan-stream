@@ -198,9 +198,10 @@ func (s *storage) refresh() {
 		start := time.Now()
 		s.cache, err = s.db.GetChecks(ctx)
 		if err != nil {
-			s.log.Errorf("error refreshing remote checks: %v", err)
+			s.log.Errorf("error refreshing remote checks in %s: %v", time.Since(start), err)
+		} else {
+			s.log.Debugf("Refreshed %d remote checks in %s", len(s.cache), time.Since(start))
 		}
-		s.log.Debugf("Refreshed %d remote checks in %s", len(s.cache), time.Since(start))
 		s.Unlock()
 	}
 }
