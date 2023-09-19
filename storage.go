@@ -53,7 +53,7 @@ func NewRedisDB(c RedisConfig) *RedisDB {
 		Username:    c.Usr,
 		Password:    c.Pwd,
 		DB:          c.DB,
-		DialTimeout: time.Second * 5,
+		DialTimeout: time.Second * 10,
 	})
 
 	if c.TTL == 0 {
@@ -146,9 +146,9 @@ func NewStorage(db RemoteDB, logger log.FieldLogger) (Storage, error) {
 	start := time.Now()
 	storage.cache, err = storage.db.GetChecks(context.Background())
 	if err != nil {
-		return nil, fmt.Errorf("err retrieving remote checks: %w", err)
+		return nil, fmt.Errorf("err retrieving remote checks in %s: %w", time.Since(start), err)
 	}
-	logger.Infof("loaded %d remote checks in %s", len(storage.cache), time.Since(start))
+	logger.Debugf("Loaded %d remote checks in %s", len(storage.cache), time.Since(start))
 
 	go storage.refresh()
 
@@ -193,15 +193,14 @@ func (s *storage) refresh() {
 	ctx := context.Background()
 
 	for {
-		// time.Sleep(time.Duration(rfshPeriod) * time.Hour)
-		time.Sleep(time.Minute)
+		time.Sleep(time.Duration(rfshPeriod) * time.Hour)
 		s.Lock()
 		start := time.Now()
 		s.cache, err = s.db.GetChecks(ctx)
 		if err != nil {
 			s.log.Errorf("error refreshing remote checks: %v", err)
 		}
-		s.log.Infof("refreshed %d remote checks in %s", len(s.cache), time.Since(start))
+		s.log.Debugf("Refreshed %d remote checks in %s", len(s.cache), time.Since(start))
 		s.Unlock()
 	}
 }
