@@ -49,11 +49,12 @@ type RedisDB struct {
 // NewRedisDB builds a new redis DB connector.
 func NewRedisDB(c RedisConfig) *RedisDB {
 	rdb := redis.NewClient(&redis.Options{
-		Addr:        fmt.Sprint(c.Host, ":", c.Port),
-		Username:    c.Usr,
-		Password:    c.Pwd,
-		DB:          c.DB,
-		DialTimeout: time.Second * 10,
+		Addr:             fmt.Sprint(c.Host, ":", c.Port),
+		Username:         c.Usr,
+		Password:         c.Pwd,
+		DB:               c.DB,
+		DialTimeout:      time.Second * 10,
+		DisableIndentity: true, // Fixes https://github.com/redis/go-redis/pull/2880
 	})
 
 	if c.TTL == 0 {
