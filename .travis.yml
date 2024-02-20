@@ -5,13 +5,13 @@ go:
 env:
   global:
     - CGO_ENABLED=0
-services:
-  - redis-server
 gobuild_args: -a -tags netgo -ldflags '-w'
 go_import_path: github.com/adevinta/vulcan-stream
+before_script: docker run -p 6379:6379 -d --name redis redis:6
 script:
   - go test -v $(go list ./... | grep -v /vendor/)
   - go install ./...
   - _script/test
+after_script: docker rm -f redis
 after_success:
   - bash -c 'source <(curl -s https://raw.githubusercontent.com/adevinta/vulcan-cicd/master/docker.sh)'
