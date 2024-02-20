@@ -7,7 +7,7 @@ env:
     - CGO_ENABLED=0
 gobuild_args: -a -tags netgo -ldflags '-w'
 go_import_path: github.com/adevinta/vulcan-stream
-before_script: docker run -p 6379:6379 -d --name redis redis:6
+before_script: docker run -p 6379:6379 -d --name redis redis:6-alpine
 script:
   - go test -v $(go list ./... | grep -v /vendor/)
   - go install ./...
