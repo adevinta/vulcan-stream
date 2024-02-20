@@ -68,7 +68,7 @@ func wsClient(l *log.Logger, c config.Config, t string, resCh chan bool, conCh c
 	go func() {
 		var err error
 		for {
-			err = websocket.ReadJSON(conn, &message)
+			err = conn.ReadJSON(&message)
 			if err != nil {
 				fmt.Println("Error receiving message: ", err.Error())
 				break
