@@ -1,30 +1,23 @@
 # Copyright 2019 Adevinta
 
-FROM golang:1.19-alpine3.15 as builder
+FROM --platform=$BUILDPLATFORM golang:1.24-alpine AS builder
 
 WORKDIR /app
 
-ENV CGO_ENABLED=0 \
-    GOOS=linux \
-    GOARCH=amd64
+ARG TARGETOS TARGETARCH
 
 COPY go.mod .
 COPY go.sum .
+
 RUN go mod download
 
 COPY . .
 
-RUN go build -o vulcan-stream -a -tags netgo -ldflags '-w' cmd/vulcan-stream/main.go
+RUN GO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -a -tags netgo -ldflags '-w' ./cmd/vulcan-stream
 
 # final stage
 FROM alpine:3.21
 RUN apk add --no-cache --update gettext
-
-ARG BUILD_RFC3339="1970-01-01T00:00:00Z"
-ARG COMMIT="local"
-
-ENV BUILD_RFC3339 "$BUILD_RFC3339"
-ENV COMMIT "$COMMIT"
 
 WORKDIR /app
 COPY --from=builder /app/vulcan-stream /app/

@@ -3,11 +3,11 @@
 set -e
 
 function clean() {
-    redis-cli flushall
+    docker exec redis redis-cli flushall
 }
 
 function test_ws_client() {
-    vulcan-stream-test-client "${TRAVIS_BUILD_DIR}"/_resources/config/test.toml
+    go run ./cmd/vulcan-stream-test-client ./_resources/config/test.toml
     if [ $? -eq 0 ]; then
         printf "\033[1;32m[SUCCESS] STREAM INTEGRATION TEST COMPLETED\033[0m\n"
     else
@@ -19,7 +19,7 @@ function test_ws_client() {
 clean
 
 # Start vulcan-stream
-vulcan-stream "${TRAVIS_BUILD_DIR}"/_resources/config/test.toml &
+go run ./cmd/vulcan-stream ./_resources/config/test.toml &
 PID=$!
 
 test_ws_client
