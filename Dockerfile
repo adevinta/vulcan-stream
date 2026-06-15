@@ -16,7 +16,7 @@ COPY . .
 RUN GO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -a -tags netgo -ldflags '-w' ./cmd/vulcan-stream
 
 # final stage
-FROM alpine:3.23
+FROM alpine:3.24
 RUN apk add --no-cache --update gettext
 
 WORKDIR /app
