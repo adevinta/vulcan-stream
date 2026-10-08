@@ -1,13 +1,13 @@
 module github.com/adevinta/vulcan-stream
 
-go 1.24
+go 1.26.0
 
 require (
 	github.com/BurntSushi/toml v1.6.0
 	github.com/adevinta/vulcan-metrics-client v1.0.1
 	github.com/danfaizer/gowse v1.0.0
 	github.com/gorilla/websocket v1.5.3
-	github.com/redis/go-redis/v9 v9.22.0
+	github.com/redis/go-redis/v9 v9.23.0
 	github.com/sirupsen/logrus v1.10.2
 )
 
@@ -15,6 +15,6 @@ require (
 	github.com/DataDog/datadog-go v4.8.3+incompatible // indirect
 	github.com/Microsoft/go-winio v0.5.2 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	go.uber.org/atomic v1.11.0 // indirect
-	golang.org/x/sys v0.30.0 // indirect
+	go.uber.org/atomic v1.12.0 // indirect
+	golang.org/x/sys v0.48.0 // indirect
 )
