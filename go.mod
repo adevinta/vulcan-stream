@@ -7,7 +7,7 @@ require (
 	github.com/adevinta/vulcan-metrics-client v1.0.1
 	github.com/danfaizer/gowse v1.0.0
 	github.com/gorilla/websocket v1.5.3
-	github.com/redis/go-redis/v9 v9.23.0
+	github.com/redis/go-redis/v9 v9.24.0
 	github.com/sirupsen/logrus v1.10.2
 )
 
@@ -16,5 +16,5 @@ require (
 	github.com/Microsoft/go-winio v0.5.2 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	go.uber.org/atomic v1.12.0 // indirect
-	golang.org/x/sys v0.48.0 // indirect
+	golang.org/x/sys v0.50.0 // indirect
 )
